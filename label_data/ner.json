@@ -1,0 +1,41 @@
+{
+  "0":{
+
+  },
+  "1":{
+    "COMPANY":12024,
+    "PERSON":4485,
+    "CONCEPT":734,
+    "COMMODITY":499,
+    "CURRENCY":405,
+    "GPE":90
+  },
+  "2":{
+    "COMPANY":12024,
+    "PERSON":4485,
+    "CONCEPT":734,
+    "COMMODITY":499,
+    "CURRENCY":405,
+    "GPE":90
+  },
+  "3":{
+    "COMPANY":12024,
+    "PERSON":4485,
+    "CONCEPT":734,
+    "COMMODITY":499,
+    "CURRENCY":405,
+    "GPE":90
+  },
+  "4":{
+    "COMPANY":12024,
+    "PERSON":4485,
+    "CONCEPT":734,
+    "COMMODITY":499,
+    "CURRENCY":405,
+    "GPE":90,
+    "":1
+  },
+  "5":{
+    "":1
+  }
+}
