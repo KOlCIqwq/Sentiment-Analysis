@@ -58,17 +58,13 @@ def analyze_text(text: str):
 if __name__ == "__main__":
     # Test sentences to analyze
     test_sentences = [
-        "Apple announced a record-breaking quarter, with iPhone sales surging past expectations.",
-        "Regulators are launching a full-scale investigation into a data breach at Meta Platforms.",
-        "Despite market volatility, Microsoft's cloud division showed steady growth.",
-        "The new electric vehicle from Tesla received mixed reviews from early testers.",
-        "HSBC will close another 25 branches by the end of the year.",
-        "Trump to put additional 25% import taxes on India, bringing combined tariffs to 50%",
-        "Trump will highlight Apple’s plans to invest $100 billion more in US, raising total to $600 billion",
-        "Wall Street holds steady following mixed profit reports from McDonald’s, Disney and Shopify",
-        "AMD stock slumps 5% on earnings miss, China AI chip concerns",
-        "Gold News: Treasury Yields Pressure Gold, but Fed Rate Cut Bets Offer Support",
-        "DIS: Disney Stock Slides Despite Earnings Beat, Doubled Profit — It’s the TV and Theatrical Units"
+        "AAPL stock raises by 5%"
+        ,"AAPL stock surges by 5%"
+        ,"Cicciogamer Ltd. gained 10% of its portofolio value"
+        ,"Bitcoin hits 118k, a new all time high!"
+        ,"U.S. startup Lyten acquires most of bankrupt Northvolt, including projects in Sweden, Germany & Poland. Backed by Stellantis & FedEx, Lyten plans to restart Northvolt's Skelleftea plant & resume battery deliveries by 2026. Ex-Northvolt execs join Lyten, excluding the founder."
+        ,"Firefly Aerospace's IPO priced at $45/share, valuing it at $6.32B, with shares set to open up to 22% higher. The company raised $868.3M, surpassing competitors, & eyes a role in missile defense. Despite past challenges, Firefly has expanded into spacecraft & lunar services."
+        ,"Bitcoin & crypto assets may soon be included in 401(k) plans as President Trump plans to sign an executive order, boosting market sentiment. Bitcoin rose 1% to $116K, Ether up 4%. Crypto stocks surged premarket. Fidelity explores bitcoin 401(k) options amid low employer adoption."
     ]
 
     for sentence in test_sentences:
