@@ -1,0 +1,35 @@
+# .github/workflows/scraper_schedule.yml
+
+name: Scrape Newsfilter Briefs
+
+on:
+  # Run the job every hour
+  schedule:
+    - cron: '0 * * * *'
+  
+  # Allows you to run this workflow manually from the Actions tab on GitHub
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browser and dependencies
+        run: playwright install --with-deps chromium
+
+      - name: Run the scraper script
+        run: python scraper.py
+        env:
+          # Use the secret we created in GitHub settings
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
