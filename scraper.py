@@ -35,7 +35,7 @@ def save_brief_to_db(brief):
     new_briefs = 0
     for b in brief:
         try:
-            cur.execute("INSERT INTO briefs (content) VALUES (%s);", (brief,))
+            cur.execute("INSERT INTO briefs (content) VALUES (%s);", (b,))
             new_briefs += 1
         except psycopg2.IntegrityError:
             # Already exist in database
