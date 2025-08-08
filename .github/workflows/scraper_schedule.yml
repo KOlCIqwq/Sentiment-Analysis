@@ -32,11 +32,11 @@ jobs:
           # Use the secret we created in GitHub settings
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Run the scraper script
-        run: python scraper.py
-        env:
+      #- name: Run the scraper script
+      #  run: python scraper.py
+      #  env:
           # Use the secret we created in GitHub settings
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      #    DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Check database entries
         run: python check_db.py
         env:
