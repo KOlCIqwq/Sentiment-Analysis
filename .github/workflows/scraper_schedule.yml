@@ -28,7 +28,7 @@ jobs:
 
       - name: Run the scraper script
         run: python scraper.py
-      -name: Check database entries
+      - name: Check database entries
         run: python check_db.py
         #run: python test_db.py
         env:
