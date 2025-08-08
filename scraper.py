@@ -41,7 +41,7 @@ def save_brief_to_db(brief):
             # Already exist in database
             pass
     conn.commit()
-    print(f"Successfully inserted {new_briefs}")
+    print(f"Successfully inserted {new_briefs} entries")
 
     cur.execute("SELECT COUNT(id) FROM briefs;") # Select all
     total_rows = cur.fetchone()[0]
