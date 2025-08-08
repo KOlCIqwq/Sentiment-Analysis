@@ -43,7 +43,7 @@ def save_brief_to_db(brief):
                 "INSERT INTO briefs (content_hash, content) VALUES (%s, %s);",
                 (content_hash, b)
             )
-            new_briefs_count += 1
+            new_briefs += 1
         except psycopg2.IntegrityError:
             conn.rollback() # acknowledge the duplicate and reset the transaction
             pass
