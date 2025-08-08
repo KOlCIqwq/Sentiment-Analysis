@@ -147,10 +147,10 @@ def main():
     if not DATABASE_URL:
         raise Exception("Database Url not set")
     print("Start Scraping")
-    #setup_database()
+    setup_database()
     scraped = scrape_and_filter_briefs()
     print(scraped)
-    #save_brief_to_db(scraped)
+    save_brief_to_db(scraped)
     print("Finished Scraping")
 
 if __name__ == "__main__":
