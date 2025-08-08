@@ -19,7 +19,7 @@ if __name__ == "__main__":
         
         conn.commit()
         
-        print("✅ Table 'briefs' successfully dropped.")
+        print("Table 'briefs' successfully dropped.")
     
     except Exception as e:
         print(f"An error occurred: {e}")
