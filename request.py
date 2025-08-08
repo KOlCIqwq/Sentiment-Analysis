@@ -1,6 +1,6 @@
 import requests
 
-url = 'https://api.marketaux.com/v1/news/all?countries=us&filter_entities=true&limit=3&published_after=2025-08-06T13:08&api_token='
+url = 'https://api.marketaux.com/v1/news/all?countries=us&filter_entities=true&limit=3&published_after=2025-08-06T13:08&api_token=rfKBD1LK5ey7HvYksmeNUiiNhR7Hxm45tCUOvoNT'
 
 response = requests.get(url)
 data = response.json()
