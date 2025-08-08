@@ -29,7 +29,8 @@ jobs:
         run: playwright install --with-deps chromium
 
       - name: Run the scraper script
-        run: python scraper.py
+        #run: python scraper.py
+        run: python test_df.py
         env:
           # Use the secret we created in GitHub settings
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
