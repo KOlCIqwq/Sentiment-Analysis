@@ -152,4 +152,4 @@ def main():
     print("Finished Scraping")
 
 if __name__ == "__main__":
-    scrape_and_filter_briefs()
+    main()
