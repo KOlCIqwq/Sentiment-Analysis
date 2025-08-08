@@ -126,8 +126,8 @@ def scrape_and_filter_briefs():
                 return
 
             print(f"\nFound {len(filtered_briefs)} Filtered Briefs")
-            for text in filtered_briefs:
-                print(f"- {text}")
+            """ for text in filtered_briefs:
+                print(f"- {text}") """
 
         except TimeoutError as e:
             print(f"\nTimeout Error: {e.message}")
@@ -141,14 +141,16 @@ def scrape_and_filter_briefs():
         finally:
             print("Closing the browser.")
             browser.close()
+        return filtered_briefs
 
 def main():
     if not DATABASE_URL:
         raise Exception("Database Url not set")
     print("Start Scraping")
-    setup_database()
+    #setup_database()
     scraped = scrape_and_filter_briefs()
-    save_brief_to_db(scraped)
+    print(scraped)
+    #save_brief_to_db(scraped)
     print("Finished Scraping")
 
 if __name__ == "__main__":
