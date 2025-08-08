@@ -26,6 +26,12 @@ jobs:
       - name: Install Playwright browser and dependencies
         run: playwright install --with-deps chromium
 
+      - name: Drop old table
+        run: python drop_db.py
+        env:
+          # Use the secret we created in GitHub settings
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Run the scraper script
         run: python scraper.py
         env:

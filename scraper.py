@@ -1,6 +1,7 @@
 import re
 import os
 import psycopg2
+import hashlib
 
 from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
@@ -8,6 +9,7 @@ from playwright_stealth import Stealth
 DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_ENTRIES = 300
 MIN_BRIEF_LENGTH = 180
+MAX_BRIEF_LENGTH = 8000
 
 def setup_database():
     """Ensures the 'briefs' table exists in the database."""
@@ -16,7 +18,8 @@ def setup_database():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS briefs (
             id SERIAL PRIMARY KEY,
-            content TEXT UNIQUE NOT NULL,
+            content_hash TEXT UNIQUE NOT NULL,
+            content TEXT NOT NULL,
             scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
     """)
@@ -34,12 +37,19 @@ def save_brief_to_db(brief):
 
     new_briefs = 0
     for b in brief:
+        content_hash = hashlib.sha256(b.encode('utf-8')).hexdigest()
         try:
-            cur.execute("INSERT INTO briefs (content) VALUES (%s);", (b,))
-            new_briefs += 1
+            cur.execute(
+                "INSERT INTO briefs (content_hash, content) VALUES (%s, %s);",
+                (content_hash, b)
+            )
+            new_briefs_count += 1
         except psycopg2.IntegrityError:
-            # Already exist in database
+            conn.rollback() # acknowledge the duplicate and reset the transaction
             pass
+        except Exception as e:
+            print(f"An unexpected error occurred during insert: {e}")
+            conn.rollback() # Rollback on any other error
     conn.commit()
     print(f"Successfully inserted {new_briefs} entries")
 
