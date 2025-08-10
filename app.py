@@ -4,6 +4,7 @@ import spacy
 from transformers import pipeline
 import torch
 from flask import Flask, render_template, request, abort
+import gc
 
 app = Flask(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -70,7 +71,7 @@ def process_unprocessed_briefs():
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT content_hash, content FROM briefs WHERE sentiment IS NULL LIMIT 5"
+                    "SELECT content_hash, content FROM briefs WHERE sentiment IS NULL LIMIT 3"
                 )
                 briefs_to_process = cur.fetchall()
 
@@ -102,6 +103,9 @@ def process_unprocessed_briefs():
     except Exception as e:
         print(f"A database error occurred during processing: {e}")
         return 0
+    finally:
+        # Clean up to free memory
+        gc.collect()
     
     return len(briefs_to_process)
 
