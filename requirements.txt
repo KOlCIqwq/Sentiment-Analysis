@@ -1,3 +1,10 @@
 playwright
 playwright-stealth
 psycopg2-binary # PostgreSQL database
+
+spacy
+transformers
+torch
+flask
+# Add the specific version of sentencepiece if needed by your HF model
+sentencepiece
