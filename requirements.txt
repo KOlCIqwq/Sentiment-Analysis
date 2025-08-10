@@ -8,3 +8,6 @@ torch
 flask
 # Add the specific version of sentencepiece if needed by your HF model
 sentencepiece
+
+flask
+gunicorn
