@@ -70,7 +70,7 @@ def process_unprocessed_briefs():
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT content_hash, content FROM briefs WHERE sentiment IS NULL LIMIT 10"
+                    "SELECT content_hash, content FROM briefs WHERE sentiment IS NULL LIMIT 5"
                 )
                 briefs_to_process = cur.fetchall()
 
