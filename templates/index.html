@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial News Analysis</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa;}
+        h1 { color: #343a40; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
+        thead { background-color: #e9ecef; }
+        tbody tr:nth-of-type(odd) { background-color: #fdfdfe; }
+        tbody tr:hover { background-color: #f1f3f5; }
+        .sentiment { font-weight: bold; }
+        .sentiment.POSITIVE { color: #28a745; }
+        .sentiment.NEGATIVE { color: #dc3545; }
+        .sentiment.NEUTRAL { color: #6c757d; }
+    </style>
+</head>
+<body>
+    <h1>Latest Processed Financial News</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Brief</th>
+                <th>Subject Company</th>
+                <th>Sentiment</th>
+                <th>Scraped At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for article in articles %}
+            <tr>
+                <td>{{ article[0] }}</td>
+                <td>{{ article[1] or 'N/A' }}</td>
+                <td class="sentiment {{ article[2] }}">{{ article[2] }}</td>
+                <td>{{ article[3].strftime('%Y-%m-%d %H:%M') }} UTC</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center;">No processed articles found. Please wait for the worker to process new data.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
