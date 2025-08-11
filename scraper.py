@@ -6,10 +6,13 @@ import hashlib
 from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
 
+# --- Configuration ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_ENTRIES = 300
 MIN_BRIEF_LENGTH = 180
 MAX_BRIEF_LENGTH = 8000
+KAGGLE_NOTEBOOK_ID = "kolci017/financial-news-analyzer"
+
 
 def setup_database():
     """Ensures the 'briefs' table exists in the database."""
@@ -20,7 +23,10 @@ def setup_database():
             id SERIAL PRIMARY KEY,
             content_hash TEXT UNIQUE NOT NULL,
             content TEXT NOT NULL,
-            scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            subject_company TEXT,
+            sentiment TEXT,
+            processed_at TIMESTAMP WITH TIME ZONE
         );
     """)
     conn.commit()
@@ -40,17 +46,15 @@ def save_brief_to_db(brief):
         content_hash = hashlib.sha256(b.encode('utf-8')).hexdigest()
         try:
             cur.execute(
-                "INSERT INTO briefs (content_hash, content) VALUES (%s, %s);",
+                "INSERT INTO briefs (content_hash, content) VALUES (%s, %s) ON CONFLICT (content_hash) DO NOTHING;",
                 (content_hash, b)
             )
-            cur.execute("NOTIFY new_brief_channel, %s;", (content_hash,))
-            new_briefs += 1
-        except psycopg2.IntegrityError:
-            conn.rollback() # acknowledge the duplicate and reset the transaction
-            pass
+            if cur.rowcount > 0:
+                new_briefs += 1
         except Exception as e:
             print(f"An unexpected error occurred during insert: {e}")
             conn.rollback() # Rollback on any other error
+            
     conn.commit()
     print(f"Successfully inserted {new_briefs} entries")
 
@@ -59,12 +63,13 @@ def save_brief_to_db(brief):
     if total_rows > MAX_ENTRIES:
         delete = total_rows - MAX_ENTRIES
         print(f"Exceeded max, removing {delete}")
+        
         cur.execute("""
                     DELETE FROM briefs
                     WHERE id IN (
                         SELECT id FROM briefs ORDER BY scraped_at ASC LIMIT %s
                     );
-                    """, (delete))
+                    """, (delete,))
         conn.commit()
         print(f"Successfully removed {delete}")
 
@@ -134,7 +139,7 @@ def scrape_and_filter_briefs():
 
             if not filtered_briefs:
                 print("Could not find any items matching the length filter.")
-                return
+                return [] # Return empty list instead of None
 
             print(f"\nFound {len(filtered_briefs)} Filtered Briefs")
             """ for text in filtered_briefs:
@@ -154,15 +159,40 @@ def scrape_and_filter_briefs():
             browser.close()
         return filtered_briefs
 
+def trigger_kaggle_notebook():
+    """Triggers the Kaggle notebook to run using the Kaggle API."""
+    print(f"\n--- Triggering Kaggle Analysis on notebook: {KAGGLE_NOTEBOOK_ID} ---")
+    # The 'kaggle kernels push -p .' command syncs the local directory and runs the notebook.
+    # It requires the notebook .ipynb file to be in the same directory.
+    command = f"kaggle kernels push -p ."
+    
+    exit_code = os.system(command)
+    if exit_code == 0:
+        print("Successfully triggered Kaggle notebook.")
+    else:
+        print(f"Error: Failed to trigger Kaggle notebook. Exit code: {exit_code}")
+
+
 def main():
     if not DATABASE_URL:
         raise Exception("Database Url not set")
-    print("Start Scraping")
-    setup_database()
-    scraped = scrape_and_filter_briefs()
-    print(scraped)
-    save_brief_to_db(scraped)
-    print("Finished Scraping")
+    if not KAGGLE_NOTEBOOK_ID or "your-kaggle-username" in KAGGLE_NOTEBOOK_ID:
+        raise Exception("KAGGLE_NOTEBOOK_ID is not configured. Please edit the script.")
+        
+    try:
+        print("--- Starting Scraping ---")
+        setup_database()
+        scraped = scrape_and_filter_briefs()
+        if scraped:
+            print(f"Scraped {len(scraped)} entries, saving to DB...")
+            save_brief_to_db(scraped)
+        else:
+            print("Scraper finished but found no new entries to save.")
+        print("--- Finished Scraping ---")
+    finally:
+        trigger_kaggle_notebook()
+        print("--- Process Complete ---")
+
 
 if __name__ == "__main__":
     main()
