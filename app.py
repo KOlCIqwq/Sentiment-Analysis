@@ -27,5 +27,13 @@ def home():
     
     return render_template('index.html', articles=articles)
 
+@app.route('/healthz')
+def health_check():
+    """
+    A simple, lightweight endpoint for the cron job to hit.
+    It does nothing but return a 200 OK status and a tiny message.
+    """
+    return "OK", 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
