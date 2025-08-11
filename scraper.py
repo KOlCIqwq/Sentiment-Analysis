@@ -6,7 +6,6 @@ import hashlib
 from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
 
-# --- Configuration ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_ENTRIES = 300
 MIN_BRIEF_LENGTH = 180
