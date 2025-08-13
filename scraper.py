@@ -1,6 +1,6 @@
 import re
 import os
-import psycopg2
+#import psycopg2
 import hashlib
 
 from datetime import datetime, timedelta, timezone
@@ -12,7 +12,6 @@ MAX_ENTRIES = 300
 MIN_BRIEF_LENGTH = 180
 MAX_BRIEF_LENGTH = 8000
 KAGGLE_NOTEBOOK_ID = "kolci017/financial-news-analyzer"
-
 
 def setup_database():
     """Ensures the 'briefs' table exists in the database."""
@@ -75,7 +74,7 @@ def save_brief_to_db(briefs):
     cur.close()
     conn.close()
 
-def parse_relative_time(time_str: str) -> datetime:
+def parse_time(time_str: str) -> datetime:
     now = datetime.now(timezone.utc)
     match = re.search(r'(\d+)\s*(m|h|d)\s*ago', time_str)
     if not match:
@@ -107,10 +106,12 @@ def scrape_and_filter_briefs():
             print("Navigating to https://newsfilter.io...")
             page.goto("https://newsfilter.io", timeout=60000, wait_until="domcontentloaded")
 
+            # Wait for the page skeleton (the "Briefs" heading)
             briefs_heading_selector = 'div:has-text("Briefs")'
             print(f"Waiting for page skeleton ('{briefs_heading_selector}')...")
             page.wait_for_selector(briefs_heading_selector, timeout=30000)
             
+            # Wait for the first news item under "Briefs" to load
             first_item_selector = f'{briefs_heading_selector} + div a'
             print(f"Waiting for dynamic content ('{first_item_selector}')...")
             page.wait_for_selector(first_item_selector, timeout=30000)
@@ -122,28 +123,32 @@ def scrape_and_filter_briefs():
             for section in sections_to_scrape:
                 article_selector = f'div:has-text("{section}") + div a'
                 list_items = page.query_selector_all(article_selector)
+
                 for item in list_items:
                     full_text = item.text_content()
-                    if not full_text:
-                        continue
-                    
-                    publish_time = parse_relative_time(full_text)
-                    
-                    cleaned_text = full_text.replace('"', "").replace("'", "")
-                    cleaned_text = re.sub(r'\([^)]*\)', '', cleaned_text)
-                    cleaned_text = re.sub(r'\d+[mhd]\s*(ago)?', '', cleaned_text).strip()
-                    for i in range(len(cleaned_text)):
-                        if cleaned_text[i].islower():
-                            cleaned_text = cleaned_text[i-1:]
+                    time = parse_time(full_text)
+                    # Remove quotes
+                    full_text = full_text.replace('"', "").replace("'", "")
+                    # Remove parenthesis
+                    full_text = re.sub(r'\([^)]*\)', '', full_text)
+                    # Remove time m,h
+                    full_text = re.sub(r'\d+m ', '', full_text)
+                    full_text = re.sub(r'\d+h ', '', full_text)
+                    # Remove ago
+                    full_text = re.sub(r'ago','',full_text)
+                    # Remove the symbol
+                    for i in range(len(full_text)):
+                        if full_text[i].islower():
+                            full_text = full_text[i-1:]
                             break
-                    cleaned_text = ' '.join(cleaned_text.split())
-                    if cleaned_text:
-                        all_items_text.append((cleaned_text, publish_time))
-
+                    full_text = ' '.join(full_text.split())
+                    if full_text:
+                        all_items_text.append((full_text,time))
             print(f"\nFiltering for items with more than {MIN_BRIEF_LENGTH} characters...")
             filtered_briefs = [
                 item for item in all_items_text if len(item[0]) > MIN_BRIEF_LENGTH
             ]
+            print(all_items_text)
 
             if not filtered_briefs:
                 print("Could not find any items matching the length filter.")
