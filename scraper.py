@@ -1,6 +1,6 @@
 import re
 import os
-#import psycopg2
+import psycopg2
 import hashlib
 
 from datetime import datetime, timedelta, timezone
