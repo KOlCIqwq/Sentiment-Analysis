@@ -16,13 +16,12 @@ def get_todays_articles():
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                # Use the 'scraped_at' column to filter by date.
                 cur.execute(
                     """
                     SELECT content, subject_company, sentiment, scraped_at
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
-                      AND scraped_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')
+                      AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = CAST(NOW() AT TIME ZONE 'UTC' AS DATE)
                     ORDER BY scraped_at DESC;
                     """
                 )
