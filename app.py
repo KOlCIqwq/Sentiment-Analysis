@@ -1,31 +1,50 @@
 # app.py on Render - The Viewer
 import os
 import psycopg2
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify 
 
 app = Flask(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 @app.route('/')
 def home():
+    return render_template('index.html')
+
+def get_todays_articles():
+    """Helper function to fetch all processed articles published today (UTC)."""
     articles = []
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
+                # Use the 'scraped_at' column to filter by date.
                 cur.execute(
                     """
                     SELECT content, subject_company, sentiment, scraped_at
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
-                    ORDER BY scraped_at DESC 
-                    LIMIT 50
+                      AND scraped_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')
+                    ORDER BY scraped_at DESC;
                     """
                 )
                 articles = cur.fetchall()
     except Exception as e:
         print(f"Database query failed: {e}")
+    return articles
+
+@app.route('/api/articles')
+def api_articles():
+    db_articles = get_todays_articles()
     
-    return render_template('index.html', articles=articles)
+    articles_as_dicts = []
+    for article in db_articles:
+        articles_as_dicts.append({
+            'content': article[0],
+            'company': article[1],
+            'sentiment': article[2],
+            'time': article[3].strftime('%Y-%m-%d %H:%M') + ' UTC' if article[3] else 'N/A'
+        })
+        
+    return jsonify(articles_as_dicts)
 
 @app.route('/healthz')
 def health_check():

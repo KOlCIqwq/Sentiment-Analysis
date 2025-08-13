@@ -3,6 +3,7 @@ import os
 import psycopg2
 import hashlib
 
+from datetime import datetime, timedelta, timezone
 from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
 
@@ -33,20 +34,20 @@ def setup_database():
     conn.close()
     print("Database setup complete. Table 'briefs' is ready.")
 
-def save_brief_to_db(brief):
-    if not brief:
+def save_brief_to_db(briefs):
+    if not briefs:
         print("Empty brief, skipping save.")
         return
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
     new_briefs = 0
-    for b in brief:
-        content_hash = hashlib.sha256(b.encode('utf-8')).hexdigest()
+    for content, published_at in briefs:
+        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
         try:
             cur.execute(
-                "INSERT INTO briefs (content_hash, content) VALUES (%s, %s) ON CONFLICT (content_hash) DO NOTHING;",
-                (content_hash, b)
+                "INSERT INTO briefs (content_hash, content, scraped_at) VALUES (%s, %s, %s) ON CONFLICT (content_hash) DO NOTHING;",
+                (content_hash, content, published_at)
             )
             if cur.rowcount > 0:
                 new_briefs += 1
@@ -57,12 +58,11 @@ def save_brief_to_db(brief):
     conn.commit()
     print(f"Successfully inserted {new_briefs} entries")
 
-    cur.execute("SELECT COUNT(id) FROM briefs;") # Select all
+    cur.execute("SELECT COUNT(id) FROM briefs;")
     total_rows = cur.fetchone()[0]
     if total_rows > MAX_ENTRIES:
         delete = total_rows - MAX_ENTRIES
         print(f"Exceeded max, removing {delete}")
-        
         cur.execute("""
                     DELETE FROM briefs
                     WHERE id IN (
@@ -74,6 +74,24 @@ def save_brief_to_db(brief):
 
     cur.close()
     conn.close()
+
+def parse_time(time_str) -> datetime:
+    now = datetime.now(timezone.utc)
+
+    match = re.search(r'(\d)\s*(m|h|d)\s*ago',time_str)
+
+    if not match:
+        return now # Fallback
+
+    val,unit = int(match.group(1),match.group(2))
+
+    if unit == 'm':
+        return now - timedelta(minutes=val)
+    elif unit == 'h':
+        return now - timedelta(hours=val)
+    elif unit == 'd':
+        return now - timedelta(days=val)
+    return now 
 
 def scrape_and_filter_briefs():
     all_items_text = []
@@ -112,6 +130,7 @@ def scrape_and_filter_briefs():
                 list_items = page.query_selector_all(article_selector)
                 for item in list_items:
                     full_text = item.text_content()
+                    publish_time = parse_time(full_text)
                     # Remove quotes
                     full_text = full_text.replace('"', "").replace("'", "")
                     # Remove parenthesis
@@ -128,12 +147,12 @@ def scrape_and_filter_briefs():
                             break
                     full_text = ' '.join(full_text.split())
                     if full_text:
-                        all_items_text.append(full_text)
+                        all_items_text.append((full_text,publish_time))
 
             # Apply the length filter to get only the briefs
             print(f"\nFiltering for items with more than {MIN_BRIEF_LENGTH} characters...")
             filtered_briefs = [
-                text for text in all_items_text if len(text) > MIN_BRIEF_LENGTH
+                text for text in all_items_text if len(text)[0] > MIN_BRIEF_LENGTH
             ]
 
             if not filtered_briefs:

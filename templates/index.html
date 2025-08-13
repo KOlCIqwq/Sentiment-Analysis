@@ -7,6 +7,18 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa;}
         h1 { color: #343a40; }
+        /* Style for the clock container */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        #clock {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #495057;
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
         thead { background-color: #e9ecef; }
@@ -19,30 +31,86 @@
     </style>
 </head>
 <body>
-    <h1>Latest Processed Financial News</h1>
+    <div class="header-container">
+        <h1>Latest Processed Financial News</h1>
+        <span id="clock"></span>
+    </div>
+    
     <table>
         <thead>
             <tr>
                 <th>Brief</th>
                 <th>Subject Company</th>
                 <th>Sentiment</th>
-                <th>Time</th>
+                <th>Published At</th>
             </tr>
         </thead>
-        <tbody>
-            {% for article in articles %}
+        <tbody id="articles-tbody">
             <tr>
-                <td>{{ article[0] }}</td>
-                <td>{{ article[1] or 'N/A' }}</td>
-                <td class="sentiment {{ article[2] }}">{{ article[2] }}</td>
-                <td>{{ article[3].strftime('%Y-%m-%d %H:%M') }} UTC</td>
+                <td colspan="4" style="text-align: center;">Loading latest articles...</td>
             </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" style="text-align: center;">No processed articles found. Please wait for the worker to process new data.</td>
-            </tr>
-            {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        // This ensures the script runs only after the full page is loaded.
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const clockElement = document.getElementById('clock');
+            const articlesTbody = document.getElementById('articles-tbody');
+
+            function updateClock() {
+                const now = new Date();
+                // Formats the time as HH:MM:SS
+                clockElement.textContent = now.toLocaleTimeString('en-GB');
+            }
+
+            async function fetchAndUpdateArticles() {
+                try {
+                    const response = await fetch('/api/articles');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const articles = await response.json();
+
+                    // Clear the current table body ("Loading..." message)
+                    articlesTbody.innerHTML = '';
+
+                    // If there are no articles, display a helpful message.
+                    if (articles.length === 0) {
+                        articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No processed articles found for today. Waiting for new data...</td></tr>';
+                        return;
+                    }
+
+                    // Build and append new table rows from the fetched data.
+                    articles.forEach(article => {
+                        // Use a template literal for clean HTML creation.
+                        const row = `
+                            <tr>
+                                <td>${article.content}</td>
+                                <td>${article.company || 'N/A'}</td>
+                                <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
+                                <td>${article.time}</td>
+                            </tr>
+                        `;
+                        // Using innerHTML is fine for this controlled scenario.
+                        articlesTbody.innerHTML += row;
+                    });
+
+                } catch (error) {
+                    console.error('Failed to fetch articles:', error);
+                    articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading articles. Please try refreshing the page.</td></tr>';
+                }
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Fetch articles as soon as the page loads.
+            fetchAndUpdateArticles();
+            // Then, set an interval to fetch them again automatically every 30 seconds.
+            setInterval(fetchAndUpdateArticles, 30000); // 30,000 milliseconds = 30 seconds
+        });
+    </script>
 </body>
 </html>
