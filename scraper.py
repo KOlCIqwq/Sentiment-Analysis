@@ -100,8 +100,9 @@ def scrape_and_filter_briefs():
         try:
             all_items_text = [] 
             print("Applying stealth measures...")
+            stealth = Stealth()
+            stealth.apply_stealth_sync(context)
             page = context.new_page()
-            Stealth.apply_stealth_sync(page)
 
             print("Navigating to https://newsfilter.io...")
             page.goto("https://newsfilter.io", timeout=60000, wait_until="domcontentloaded")
