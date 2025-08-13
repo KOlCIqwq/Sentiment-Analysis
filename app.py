@@ -16,9 +16,6 @@ def get_latest_articles():
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                # --- REVERTED QUERY ---
-                # This is the original, simple query that just gets the
-                # 50 most recent entries that have been processed.
                 cur.execute(
                     """
                     SELECT content, subject_company, sentiment, scraped_at

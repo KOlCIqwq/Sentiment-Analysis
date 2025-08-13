@@ -79,7 +79,7 @@ def parse_relative_time(time_str: str) -> datetime:
     now = datetime.now(timezone.utc)
     match = re.search(r'(\d+)\s*(m|h|d)\s*ago', time_str)
     if not match:
-        return now  # Fallback
+        return now
     value = int(match.group(1))
     unit = match.group(2)
     if unit == 'm':
@@ -101,51 +101,68 @@ def scrape_and_filter_briefs():
             all_items_text = [] 
             print("Applying stealth measures...")
             page = context.new_page()
+            Stealth.apply_stealth_sync(page)
+
+            print("Navigating to https://newsfilter.io...")
             page.goto("https://newsfilter.io", timeout=60000, wait_until="domcontentloaded")
+
             briefs_heading_selector = 'div:has-text("Briefs")'
+            print(f"Waiting for page skeleton ('{briefs_heading_selector}')...")
             page.wait_for_selector(briefs_heading_selector, timeout=30000)
+            
             first_item_selector = f'{briefs_heading_selector} + div a'
+            print(f"Waiting for dynamic content ('{first_item_selector}')...")
             page.wait_for_selector(first_item_selector, timeout=30000)
             print("Dynamic content loaded.")
+
             sections_to_scrape = ["Briefs", "Press Releases"]
+            
             print("\nScraping all news sections...")
             for section in sections_to_scrape:
                 article_selector = f'div:has-text("{section}") + div a'
                 list_items = page.query_selector_all(article_selector)
                 for item in list_items:
                     full_text = item.text_content()
-                    # Parse time BEFORE cleaning the string
+                    if not full_text:
+                        continue
+                    
                     publish_time = parse_relative_time(full_text)
-                    # Clean the text string
-                    full_text = full_text.replace('"', "").replace("'", "")
-                    full_text = re.sub(r'\([^)]*\)', '', full_text)
-                    full_text = re.sub(r'\d+[mhd]\s*(ago)?', '', full_text)
-                    for i in range(len(full_text)):
-                        if full_text[i].islower():
-                            full_text = full_text[i-1:]
+                    
+                    cleaned_text = full_text.replace('"', "").replace("'", "")
+                    cleaned_text = re.sub(r'\([^)]*\)', '', cleaned_text)
+                    cleaned_text = re.sub(r'\d+[mhd]\s*(ago)?', '', cleaned_text).strip()
+                    for i in range(len(cleaned_text)):
+                        if cleaned_text[i].islower():
+                            cleaned_text = cleaned_text[i-1:]
                             break
-                    full_text = ' '.join(full_text.split())
-                    if full_text:
-                        all_items_text.append((full_text, publish_time))
-            
-            # Apply the length filter to get only the briefs
+                    cleaned_text = ' '.join(cleaned_text.split())
+                    if cleaned_text:
+                        all_items_text.append((cleaned_text, publish_time))
+
             print(f"\nFiltering for items with more than {MIN_BRIEF_LENGTH} characters...")
             filtered_briefs = [
                 item for item in all_items_text if len(item[0]) > MIN_BRIEF_LENGTH
             ]
+
             if not filtered_briefs:
                 print("Could not find any items matching the length filter.")
                 return []
+
             print(f"\nFound {len(filtered_briefs)} Filtered Briefs")
 
         except TimeoutError as e:
             print(f"\nTimeout Error: {e.message}")
+            if 'page' in locals():
+                page.screenshot(path="error_timeout_final.png")
+            print("An error screenshot has been saved.")
+        
         except Exception as e:
             print(f"An unexpected error occurred during scraping: {e}")
+
         finally:
             print("Closing the browser.")
             browser.close()
-
+            
     return filtered_briefs
 
 def trigger_kaggle_notebook():
@@ -157,11 +174,13 @@ def trigger_kaggle_notebook():
     else:
         print(f"Error: Failed to trigger Kaggle notebook. Exit code: {exit_code}")
 
+
 def main():
     if not DATABASE_URL:
         raise Exception("Database Url not set")
     if not KAGGLE_NOTEBOOK_ID or "your-kaggle-username" in KAGGLE_NOTEBOOK_ID:
         raise Exception("KAGGLE_NOTEBOOK_ID is not configured. Please edit the script.")
+        
     try:
         print("--- Starting Scraping ---")
         setup_database()
@@ -175,6 +194,7 @@ def main():
     finally:
         trigger_kaggle_notebook()
         print("--- Process Complete ---")
+
 
 if __name__ == "__main__":
     main()
