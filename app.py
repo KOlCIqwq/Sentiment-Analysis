@@ -10,19 +10,22 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def home():
     return render_template('index.html')
 
-def get_todays_articles():
-    """Helper function to fetch all processed articles published today (UTC)."""
+def get_latest_articles():
+    """Helper function to fetch the 50 most recent processed articles."""
     articles = []
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
+                # --- REVERTED QUERY ---
+                # This is the original, simple query that just gets the
+                # 50 most recent entries that have been processed.
                 cur.execute(
                     """
                     SELECT content, subject_company, sentiment, scraped_at
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
-                      AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = CAST(NOW() AT TIME ZONE 'UTC' AS DATE)
-                    ORDER BY scraped_at DESC;
+                    ORDER BY scraped_at DESC
+                    LIMIT 50;
                     """
                 )
                 articles = cur.fetchall()
@@ -30,9 +33,11 @@ def get_todays_articles():
         print(f"Database query failed: {e}")
     return articles
 
+
 @app.route('/api/articles')
 def api_articles():
-    db_articles = get_todays_articles()
+    """Returns the latest articles as JSON."""
+    db_articles = get_latest_articles() 
     
     articles_as_dicts = []
     for article in db_articles:
