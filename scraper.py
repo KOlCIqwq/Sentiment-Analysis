@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-MAX_ENTRIES = 300
+MAX_ENTRIES = 3000
 MIN_BRIEF_LENGTH = 180
 MAX_BRIEF_LENGTH = 8000
 KAGGLE_NOTEBOOK_ID = "kolci017/financial-news-analyzer"
