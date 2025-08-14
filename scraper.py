@@ -85,7 +85,7 @@ def parse_time(time_str: str) -> datetime:
         return now - timedelta(minutes=value)
     elif unit == 'h':
         return now - timedelta(hours=value)
-    elif unit == 'd':
+    elif unit == 'D':
         return now - timedelta(days=value)
     return now
 
