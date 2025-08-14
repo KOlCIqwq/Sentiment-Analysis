@@ -76,7 +76,7 @@ def save_brief_to_db(briefs):
 
 def parse_time(time_str: str) -> datetime:
     now = datetime.now(timezone.utc)
-    match = re.search(r'(\d+)\s*(m|h|d)\s*ago', time_str)
+    match = re.search(r'(\d+)\s*(m|h|D)\s*ago', time_str)
     if not match:
         return now
     value = int(match.group(1))
