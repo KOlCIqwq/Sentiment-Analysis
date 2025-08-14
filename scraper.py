@@ -127,6 +127,9 @@ def scrape_and_filter_briefs():
                 for item in list_items:
                     full_text = item.text_content()
                     time = parse_time(full_text)
+                    if re.match(r'\d+D'):
+                        # Skip items with more than 1 day old
+                        continue
                     # Remove quotes
                     full_text = full_text.replace('"', "").replace("'", "")
                     # Remove parenthesis
