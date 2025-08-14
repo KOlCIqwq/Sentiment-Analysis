@@ -6,22 +6,24 @@
     <title>Financial News Analysis</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa;}
-        h1 { color: #343a40; }
-        /* Style for the clock container */
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        #clock {
-            font-size: 1.5rem;
-            font-weight: 500;
-            color: #495057;
-        }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;}
+        
+        /* Styles for the date navigation */
+        .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-grow: 1; }
+        .date-nav h1 { margin: 0; color: #343a40; font-size: 1.75rem; }
+        .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px;}
+        .date-nav button:hover { color: #0056b3; }
+        .date-nav button:disabled { color: #ccc; cursor: not-allowed; }
+
+        #clock { font-size: 1.5rem; font-weight: 500; color: #495057; }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
         thead { background-color: #e9ecef; }
+        
+        /* Styles for the fade transition */
+        #articles-tbody { transition: opacity 0.3s ease-in-out; }
+        #articles-tbody.loading { opacity: 0; }
+
         tbody tr:nth-of-type(odd) { background-color: #fdfdfe; }
         tbody tr:hover { background-color: #f1f3f5; }
         .sentiment { font-weight: bold; }
@@ -32,7 +34,11 @@
 </head>
 <body>
     <div class="header-container">
-        <h1>Latest Processed Financial News</h1>
+        <div class="date-nav">
+            <button id="btn-prev" title="Previous Day">&lt;</button>
+            <h1 id="date-title">Loading...</h1>
+            <button id="btn-next" title="Next Day">&gt;</button>
+        </div>
         <span id="clock"></span>
     </div>
     
@@ -45,71 +51,123 @@
                 <th>Published At</th>
             </tr>
         </thead>
-        <tbody id="articles-tbody">
-            <tr>
-                <td colspan="4" style="text-align: center;">Loading latest articles...</td>
-            </tr>
-        </tbody>
+        <tbody id="articles-tbody"></tbody>
     </table>
 
     <script>
-        // This ensures the script runs only after the full page is loaded.
         document.addEventListener('DOMContentLoaded', () => {
+            let currentDate = new Date();
+            let autoRefreshIntervalId = null;
 
             const clockElement = document.getElementById('clock');
             const articlesTbody = document.getElementById('articles-tbody');
+            const dateTitle = document.getElementById('date-title');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
 
+            const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+            const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
+
+            // UI UPDATE FUNCTIONS
             function updateClock() {
-                const now = new Date();
-                // Formats the time as HH:MM:SS
-                clockElement.textContent = now.toLocaleTimeString('en-GB');
+                clockElement.textContent = new Date().toLocaleTimeString('en-GB');
             }
 
-            async function fetchAndUpdateArticles() {
-                try {
-                    const response = await fetch('/api/articles');
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const articles = await response.json();
+            function updateDateTitle(date) {
+                const today = new Date();
+                const yesterday = new Date();
+                yesterday.setDate(today.getDate() - 1);
 
-                    // Clear the current table body ("Loading..." message)
-                    articlesTbody.innerHTML = '';
-
-                    // If there are no articles, display a helpful message.
-                    if (articles.length === 0) {
-                        articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No processed articles found for today. Waiting for new data...</td></tr>';
-                        return;
-                    }
-
-                    // Build and append new table rows from the fetched data.
-                    articles.forEach(article => {
-                        // Use a template literal for clean HTML creation.
-                        const row = `
-                            <tr>
-                                <td>${article.content}</td>
-                                <td>${article.company || 'N/A'}</td>
-                                <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
-                                <td>${article.time}</td>
-                            </tr>
-                        `;
-                        // Using innerHTML is fine for this controlled scenario.
-                        articlesTbody.innerHTML += row;
-                    });
-
-                } catch (error) {
-                    console.error('Failed to fetch articles:', error);
-                    articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading articles. Please try refreshing the page.</td></tr>';
+                if (isSameDay(date, today)) {
+                    dateTitle.textContent = "Today";
+                } else if (isSameDay(date, yesterday)) {
+                    dateTitle.textContent = "Yesterday";
+                } else {
+                    dateTitle.textContent = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                 }
             }
 
+            function updateNavButtons(date) {
+                // Disable the "next" button if we are viewing today or a future date
+                btnNext.disabled = date >= new Date().setHours(0, 0, 0, 0);
+            }
+
+            // DATA AND REFRESH LOGIC
+            function stopAutoRefresh() {
+                if (autoRefreshIntervalId) clearInterval(autoRefreshIntervalId);
+                autoRefreshIntervalId = null;
+            }
+
+            function startAutoRefresh() {
+                stopAutoRefresh();
+                autoRefreshIntervalId = setInterval(() => fetchAndUpdateArticles(currentDate, false), 30000);
+            }
+
+            async function fetchAndUpdateArticles(date, showLoadingText = true) {
+                // VISUAL CUE: Fade out the table
+                articlesTbody.classList.add('loading');
+                if (showLoadingText) {
+                    articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading articles...</td></tr>';
+                }
+
+                // Update the title and buttons to reflect the date we are fetching
+                updateDateTitle(date);
+                updateNavButtons(date);
+
+                // Manage auto-refresh: only run it for today
+                if (isSameDay(date, new Date())) {
+                    startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
+                }
+
+                try {
+                    const dateStr = toYYYYMMDD(date);
+                    const response = await fetch(`/api/articles?date=${dateStr}`);
+                    const articles = await response.json();
+                    
+                    // After a short delay to let the fade-out finish, update the content
+                    setTimeout(() => {
+                        articlesTbody.innerHTML = ''; // Clear content
+                        if (articles.length === 0) {
+                            articlesTbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No processed articles found for this day.</td></tr>`;
+                        } else {
+                            articles.forEach(article => {
+                                const row = `
+                                    <tr>
+                                        <td>${article.content}</td>
+                                        <td>${article.company || 'N/A'}</td>
+                                        <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
+                                        <td>${article.time}</td>
+                                    </tr>
+                                `;
+                                articlesTbody.innerHTML += row;
+                            });
+                        }
+                        // Fade the table back in
+                        articlesTbody.classList.remove('loading');
+                    }, 300); // 300ms matches the CSS transition time
+
+                } catch (error) {
+                    console.error('Failed to fetch articles:', error);
+                    articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading articles.</td></tr>';
+                    articlesTbody.classList.remove('loading');
+                }
+            }
+
+            btnPrev.addEventListener('click', () => {
+                currentDate.setDate(currentDate.getDate() - 1);
+                fetchAndUpdateArticles(currentDate);
+            });
+
+            btnNext.addEventListener('click', () => {
+                currentDate.setDate(currentDate.getDate() + 1);
+                fetchAndUpdateArticles(currentDate);
+            });
+
             updateClock();
             setInterval(updateClock, 1000);
-
-            // Fetch articles as soon as the page loads.
-            fetchAndUpdateArticles();
-            // Then, set an interval to fetch them again automatically every 30 seconds.
-            setInterval(fetchAndUpdateArticles, 30000); // 30,000 milliseconds = 30 seconds
+            fetchAndUpdateArticles(currentDate); // Initial load for today
         });
     </script>
 </body>
