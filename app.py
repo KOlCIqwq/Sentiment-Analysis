@@ -1,7 +1,7 @@
 # app.py on Render - The Viewer
 import os
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
@@ -11,6 +11,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def home():
     return render_template('index.html')
 
+@app.route('/api/articles')
 def articles():
     '''
     Returns articles as JSON for a specific date in the query
@@ -37,11 +38,12 @@ def articles():
                       AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
                     ORDER BY scraped_at DESC;
                 """
-                cur.execute(query,(target_date))
+                cur.execute(query,(target_date,))
                 articles_db = cur.fetchall()
     except Exception as e:
         print(f"Fetch failed: {e}")
         return jsonify({"Failed to retrieve articles"}), 500
+    
     articles_dict = []
     for article in articles_db:
         articles_dict.append({

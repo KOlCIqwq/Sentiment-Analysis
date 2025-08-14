@@ -104,7 +104,6 @@
             }
 
             async function fetchAndUpdateArticles(date, showLoadingText = true) {
-                // VISUAL CUE: Fade out the table
                 articlesTbody.classList.add('loading');
                 if (showLoadingText) {
                     articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading articles...</td></tr>';
