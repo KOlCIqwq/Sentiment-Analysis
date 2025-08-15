@@ -42,11 +42,13 @@ def analyze_text(text: str):
     sentiment_result = sentiment_pipeline(text)
     sentiment = sentiment_result[0]['label'].upper()
     score = sentiment_result[0]['score']
+    score = str(f"{score:.4f}")
+    sentiment = sentiment + "Confidence: " + score
 
     # Display the results
     print("-" * 20)
-    print(f"Sentiment: {sentiment} (Score: {score:.4f})")
-    #print(companies)
+    #print(f"Sentiment: {sentiment} (Score: {score:.4f})")
+    print(sentiment)
     
     if companies:
         print(f"Companies Found: {', '.join(companies)}")
@@ -58,7 +60,8 @@ def analyze_text(text: str):
 if __name__ == "__main__":
     # Test sentences to analyze
     test_sentences = [
-        
+        "Bridgewater Associates sold all its U.S.-listed China shares in Q2 2025, including $1.5B in stocks & ETFs, amid U.S.-China trade tensions & potential de-listings. Major sales involved Alibaba, JD.com, & Baidu, while increasing U.S. tech investments in Nvidia, Alphabet, & Microsoft."
+        ,
     ]
 
     for sentence in test_sentences:
