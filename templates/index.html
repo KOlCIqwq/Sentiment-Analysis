@@ -8,7 +8,6 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa;}
         .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;}
         
-        /* Styles for the date navigation */
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-grow: 1; }
         .date-nav h1 { margin: 0; color: #343a40; font-size: 1.75rem; }
         .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px;}
@@ -20,7 +19,6 @@
         th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
         thead { background-color: #e9ecef; }
         
-        /* Styles for the fade transition */
         #articles-tbody { transition: opacity 0.3s ease-in-out; }
         #articles-tbody.loading { opacity: 0; }
 
@@ -68,7 +66,6 @@
             const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
             const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
 
-            // UI UPDATE FUNCTIONS
             function updateClock() {
                 clockElement.textContent = new Date().toLocaleTimeString('en-GB');
             }
@@ -88,11 +85,9 @@
             }
 
             function updateNavButtons(date) {
-                // Disable the "next" button if we are viewing today or a future date
                 btnNext.disabled = date >= new Date().setHours(0, 0, 0, 0);
             }
 
-            // DATA AND REFRESH LOGIC
             function stopAutoRefresh() {
                 if (autoRefreshIntervalId) clearInterval(autoRefreshIntervalId);
                 autoRefreshIntervalId = null;
@@ -109,11 +104,9 @@
                     articlesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading articles...</td></tr>';
                 }
 
-                // Update the title and buttons to reflect the date we are fetching
                 updateDateTitle(date);
                 updateNavButtons(date);
 
-                // Manage auto-refresh: only run it for today
                 if (isSameDay(date, new Date())) {
                     startAutoRefresh();
                 } else {
@@ -125,27 +118,26 @@
                     const response = await fetch(`/api/articles?date=${dateStr}`);
                     const articles = await response.json();
                     
-                    // After a short delay to let the fade-out finish, update the content
                     setTimeout(() => {
-                        articlesTbody.innerHTML = ''; // Clear content
+                        articlesTbody.innerHTML = '';
                         if (articles.length === 0) {
                             articlesTbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No processed articles found for this day.</td></tr>`;
                         } else {
                             articles.forEach(article => {
+                                const sentimentLabel = article.sentiment.split(' ')[0];
                                 const row = `
                                     <tr>
                                         <td>${article.content}</td>
                                         <td>${article.company || 'N/A'}</td>
-                                        <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
+                                        <td class="sentiment ${sentimentLabel}">${article.sentiment}</td>
                                         <td>${article.time}</td>
                                     </tr>
                                 `;
                                 articlesTbody.innerHTML += row;
                             });
                         }
-                        // Fade the table back in
                         articlesTbody.classList.remove('loading');
-                    }, 300); // 300ms matches the CSS transition time
+                    }, 300);
 
                 } catch (error) {
                     console.error('Failed to fetch articles:', error);
@@ -166,7 +158,7 @@
 
             updateClock();
             setInterval(updateClock, 1000);
-            fetchAndUpdateArticles(currentDate); // Initial load for today
+            fetchAndUpdateArticles(currentDate);
         });
     </script>
 </body>
