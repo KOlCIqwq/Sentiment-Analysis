@@ -17,8 +17,9 @@ def articles():
     Returns articles as JSON for a specific date in the query
     '''
 
-    date_str = request.args.get('date')
+    date_str = request.args.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d'))
     target_date = None
+    confidence_filter = request.args.get('confidence', 'all')
 
     if date_str:
         try:
@@ -27,7 +28,8 @@ def articles():
             return jsonify({"Invalid date format, use YYYY-MM-DD"}),400
     else:
         target_date = datetime.now(timezone.utc).date()
-    articles = []
+
+    articles_db = []
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
@@ -35,10 +37,13 @@ def articles():
                     SELECT content, subject_company, sentiment, scraped_at
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
-                      AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
-                    ORDER BY scraped_at DESC;
+                    AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
                 """
-                cur.execute(query,(target_date,))
+                if confidence_filter == 'high':
+                    query += " AND confidence >= 0.85"
+                query += " ORDER BY scraped_at DESC;"
+
+                cur.execute(query,tuple([target_date]))
                 articles_db = cur.fetchall()
     except Exception as e:
         print(f"Fetch failed: {e}")
@@ -50,9 +55,48 @@ def articles():
             'content':article[0],
             'company':article[1],
             'sentiment':article[2],
-            'time': article[3].strftime('%Y-%m-%d %H:%M') + 'UTC' if article[3] else 'N/A'
+            'confidence':article[3],
+            'time': article[4].strftime('%Y-%m-%d %H:%M') + 'UTC' if article[4] else 'N/A'
         })
     return jsonify(articles_dict)
+
+@app.route('/api/summary')
+def api_summary():
+    '''
+    Return summary statistics for the top bar
+    '''
+    confidence_filter = request.args.get('confidence', 'all')
+    confidence_sql = "AND confidence >= 0.85" if confidence_filter == 'high' else ""
+
+    summary = {}
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                daily_req = f"""
+                    SELECT COUNT(*) FROM briefs
+                    WHERE sentiment IS NOT NULL
+                    AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = CAST(NOW() AT TIME ZONE 'UTC' AS DATE)
+                    {confidence_sql};
+                """
+                cur.execute(daily_req)
+                summary['daily_count'] = cur.fetchone()[0]
+                # Get monthly counts
+                monthly_req = f"""
+                    SELECT sentiment, COUNT(*) FROM briefs
+                    WHERE sentiment IS NOT NULL
+                    AND scraped_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
+                    {confidence_sql}
+                    GROUP BY sentiment;
+                """
+                cur.execute(monthly_req)
+                monthly_out = dict(cur.fetchall())
+                summary['month_pos'] = monthly_out.get('POSITIVE')
+                summary['month_neg'] = monthly_out.get('NEGATIVE')
+                summary['month_neu'] = monthly_out.get('NEUTRAL')
+    except Exception as e:
+        print(f"Database summary query failed: {e}")
+        return jsonify({"error": "Failed to retrieve summary."}), 500
+    return jsonify(summary)
 
 @app.route('/healthz')
 def health_check():

@@ -25,9 +25,11 @@ def setup_database():
             scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             subject_company TEXT,
             sentiment TEXT,
+            confidence REAL,
             processed_at TIMESTAMP WITH TIME ZONE
         );
     """)
+    cur.execute("ALTER TABLE briefs ADD COLUMN IF NOT EXISTS confidence REAL;")
     conn.commit()
     cur.close()
     conn.close()
