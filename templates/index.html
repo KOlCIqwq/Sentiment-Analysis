@@ -94,6 +94,7 @@
             const dailyCountValue = document.getElementById('daily-count-value');
             const monthlyPositive = document.getElementById('monthly-positive');
             const monthlyNegative = document.getElementById('monthly-negative');
+            const monthlyTotal = document.getElementById('monthly-summary');
 
             const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
             const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
@@ -132,6 +133,7 @@
                 dailyCountValue.textContent = summaryData.daily_count || 0;
                 monthlyPositive.textContent = `+${summaryData.monthly_positive || 0}`;
                 monthlyNegative.textContent = `-${summaryData.monthly_negative || 0}`;
+                monthlyTotal.textContent = 'Total:' + (summaryData.monthly_positive + summaryData.monthly_negative || 0);
 
                 // Update articles table with fade effect
                 setTimeout(() => {
