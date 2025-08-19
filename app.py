@@ -34,7 +34,7 @@ def articles():
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
                 query = """
-                    SELECT content, subject_company, sentiment, scraped_at
+                    SELECT content, subject_company, sentiment, confidence, scraped_at
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
                     AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
@@ -52,11 +52,11 @@ def articles():
     articles_dict = []
     for article in articles_db:
         articles_dict.append({
-            'content':article[0],
-            'company':article[1],
-            'sentiment':article[2],
-            'confidence':article[3],
-            'time': article[4].strftime('%Y-%m-%d %H:%M') + 'UTC' if article[4] else 'N/A'
+            'content': article[0],
+            'company': article[1],
+            'sentiment': article[2],
+            'confidence': article[3],
+            'time': article[4].strftime('%Y-%m-%d %H:%M') + ' UTC' if article[4] else 'N/A'
         })
     return jsonify(articles_dict)
 
@@ -72,27 +72,29 @@ def api_summary():
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                daily_req = f"""
+                # Get daily count
+                daily_query = f"""
                     SELECT COUNT(*) FROM briefs
                     WHERE sentiment IS NOT NULL
                     AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = CAST(NOW() AT TIME ZONE 'UTC' AS DATE)
                     {confidence_sql};
                 """
-                cur.execute(daily_req)
+                cur.execute(daily_query)
                 summary['daily_count'] = cur.fetchone()[0]
+                
                 # Get monthly counts
-                monthly_req = f"""
+                monthly_query = f"""
                     SELECT sentiment, COUNT(*) FROM briefs
-                    WHERE sentiment IS NOT NULL
+                    WHERE sentiment IN ('POSITIVE', 'NEGATIVE')
                     AND scraped_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
                     {confidence_sql}
                     GROUP BY sentiment;
                 """
-                cur.execute(monthly_req)
-                monthly_out = dict(cur.fetchall())
-                summary['month_pos'] = monthly_out.get('POSITIVE')
-                summary['month_neg'] = monthly_out.get('NEGATIVE')
-                summary['month_neu'] = monthly_out.get('NEUTRAL')
+                cur.execute(monthly_query)
+                monthly_results = dict(cur.fetchall())
+                summary['monthly_positive'] = monthly_results.get('POSITIVE', 0)
+                summary['monthly_negative'] = monthly_results.get('NEGATIVE', 0)
+                summary['month_neutral'] = monthly_results.get('NEUTRAL',0)
     except Exception as e:
         print(f"Database summary query failed: {e}")
         return jsonify({"error": "Failed to retrieve summary."}), 500
