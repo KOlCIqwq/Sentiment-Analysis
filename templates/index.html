@@ -10,10 +10,12 @@
         .widget { background-color: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
         .widget h2 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #6c757d; text-transform: uppercase; }
         .widget p { margin: 0; font-size: 1.75rem; font-weight: 500; }
-        #monthly-summary p { display: flex; gap: 1rem; }
+        #monthly-summary p { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .summary-values { display: flex; gap: 1rem; }
         .summary-value { display: flex; align-items: center; gap: 0.5rem; }
         .positive-text { color: #28a745; }
         .negative-text { color: #dc3545; }
+        .total-text { font-size: 1rem; color: #495057; font-weight: bold; margin-top: 0.5rem; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; }
         .date-nav h1 { margin: 0; font-size: 1.5rem; }
         .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px;}
@@ -40,12 +42,14 @@
 </head>
 <body>
     <div class="top-bar">
-        <div class="widget" id="monthly-summary">
+        <div class="widget" id="monthly-summary-widget">
             <h2>This Month's Summary</h2>
             <p>
-                <span class="summary-value positive-text" id="monthly-positive">...</span>
-                <span class="summary-value negative-text" id="monthly-negative">...</span>
-                <span class="summary-value negative-text" id="monthly-summary">...</span>
+                <div class="summary-values">
+                    <span class="summary-value positive-text" id="monthly-positive">...</span>
+                    <span class="summary-value negative-text" id="monthly-negative">...</span>
+                </div>
+                <span class="total-text" id="monthly-total">Total: ...</span>
             </p>
         </div>
         <div class="widget" id="daily-count">
@@ -83,7 +87,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let currentDate = new Date();
-            let confidenceLevel = 'all'; // 'all' or 'high'
+            let confidenceLevel = 'all';  // 'all' or 'high'
             let autoRefreshIntervalId = null;
 
             const dateTitle = document.getElementById('date-title');
@@ -95,7 +99,7 @@
             const dailyCountValue = document.getElementById('daily-count-value');
             const monthlyPositive = document.getElementById('monthly-positive');
             const monthlyNegative = document.getElementById('monthly-negative');
-            const monthlyTotal = document.getElementById('monthly-summary');
+            const monthlyTotal = document.getElementById('monthly-total');
 
             const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
             const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
@@ -123,19 +127,18 @@
 
                 if (showLoading) articlesTbody.classList.add('loading');
                 updateUIState();
-
                 // Fetch both summary and articles in parallel
                 const [summaryData, articlesData] = await Promise.all([
                     fetch(`/api/summary?confidence=${confidenceLevel}`).then(res => res.json()),
                     fetch(`/api/articles${params}`).then(res => res.json())
                 ]);
-                
                 // Update summary widgets
+                const posCount = summaryData.monthly_positive || 0;
+                const negCount = summaryData.monthly_negative || 0;
                 dailyCountValue.textContent = summaryData.daily_count || 0;
-                monthlyPositive.textContent = `+${summaryData.monthly_positive || 0}`;
-                monthlyNegative.textContent = `-${summaryData.monthly_negative || 0}`;
-                monthlyTotal.textContent = 'Total:' + (summaryData.monthly_positive + summaryData.monthly_negative || 0);
-
+                monthlyPositive.textContent = `+${posCount}`;
+                monthlyNegative.textContent = `-${negCount}`;
+                monthlyTotal.textContent = `Total: ${posCount + negCount}`;
                 // Update articles table with fade effect
                 setTimeout(() => {
                     articlesTbody.innerHTML = '';
@@ -165,7 +168,6 @@
                 stopAutoRefresh();
                 autoRefreshIntervalId = setInterval(() => updateDashboard(false), 30000);
             }
-
             // Event Listeners
             btnPrev.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() - 1); updateDashboard(); });
             btnNext.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() + 1); updateDashboard(); });
@@ -173,7 +175,6 @@
                 confidenceLevel = e.target.checked ? 'high' : 'all';
                 updateDashboard();
             });
-
             // Initial Load
             updateClock();
             setInterval(updateClock, 1000);
