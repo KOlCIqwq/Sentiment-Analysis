@@ -15,6 +15,7 @@
         .positive-text { color: #28a745; }
         .negative-text { color: #dc3545; }
         .neutral-text { color: #6c757d; }
+        .total-text { font-size: 1rem; color: #495057; font-weight: bold; margin-top: 0.5rem; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; }
         .date-nav h1 { margin: 0; font-size: 1.5rem; }
         .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px; }
@@ -45,6 +46,7 @@
                 <p class="summary-value positive-text" id="monthly-positive">...</p>
                 <p class="summary-value negative-text" id="monthly-negative">...</p>
             </div>
+            <p class="total-text" id="monthly-total">Total: ...</p>
         </div>
         <div class="widget">
             <h2 id="daily-summary-title">Daily Summary</h2>
@@ -96,6 +98,7 @@
             const dailyNeutral = document.getElementById('daily-neutral');
             const monthlyPositive = document.getElementById('monthly-positive');
             const monthlyNegative = document.getElementById('monthly-negative');
+            const monthlyTotal = document.getElementById('monthly-total');
 
             const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
             const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
@@ -139,11 +142,18 @@
                     fetch(`/api/articles${articlesParams}`).then(res => res.json())
                 ]);
                 
-                dailyPositive.textContent = `+${summaryData.daily.positive || 0}`;
-                dailyNegative.textContent = `-${summaryData.daily.negative || 0}`;
-                dailyNeutral.textContent = `~${summaryData.daily.neutral || 0}`;
-                monthlyPositive.textContent = `+${summaryData.monthly.positive || 0}`;
-                monthlyNegative.textContent = `-${summaryData.monthly.negative || 0}`;
+                const dailyPos = summaryData.daily.positive || 0;
+                const dailyNeg = summaryData.daily.negative || 0;
+                const dailyNeu = summaryData.daily.neutral || 0;
+                const monthlyPos = summaryData.monthly.positive || 0;
+                const monthlyNeg = summaryData.monthly.negative || 0;
+
+                dailyPositive.textContent = `+${dailyPos}`;
+                dailyNegative.textContent = `-${dailyNeg}`;
+                dailyNeutral.textContent = `~${dailyNeu}`;
+                monthlyPositive.textContent = `+${monthlyPos}`;
+                monthlyNegative.textContent = `-${monthlyNeg}`;
+                monthlyTotal.textContent = `Total: ${monthlyPos + monthlyNeg}`;
 
                 setTimeout(() => {
                     articlesTbody.innerHTML = '';
@@ -177,7 +187,7 @@
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
                     updateDashboard();
-                }, 1000); // Wait 1 second after the user stops changing the value
+                }, 1000);
             }
 
             btnPrev.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() - 1); updateDashboard(); });
@@ -195,7 +205,7 @@
                 if (value > 100) value = 100;
                 confidenceThreshold = value;
                 confidenceSlider.value = confidenceThreshold;
-                e.target.value = confidenceThreshold; // Correct the input if invalid
+                e.target.value = confidenceThreshold;
                 handleConfidenceChange();
             });
 
