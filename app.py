@@ -1,4 +1,3 @@
-# app.py on Render - The Viewer
 import os
 import psycopg2
 from datetime import datetime, timezone
@@ -12,22 +11,15 @@ def home():
     return render_template('index.html')
 
 @app.route('/api/articles')
-def articles():
-    '''
-    Returns articles as JSON for a specific date in the query
-    '''
-
+def api_articles():
     date_str = request.args.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d'))
-    target_date = None
-    confidence_filter = request.args.get('confidence', 'all')
-
-    if date_str:
-        try:
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({"Invalid date format, use YYYY-MM-DD"}),400
-    else:
-        target_date = datetime.now(timezone.utc).date()
+    confidence_str = request.args.get('confidence', '0')
+    
+    try:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        min_confidence = float(confidence_str)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid date or confidence format."}), 400
 
     articles_db = []
     try:
@@ -38,74 +30,78 @@ def articles():
                     FROM briefs 
                     WHERE sentiment IS NOT NULL 
                     AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
+                    AND confidence >= %s
+                    ORDER BY scraped_at DESC;
                 """
-                if confidence_filter == 'high':
-                    query += " AND confidence >= 0.85"
-                query += " ORDER BY scraped_at DESC;"
-
-                cur.execute(query,tuple([target_date]))
+                cur.execute(query, (target_date, min_confidence))
                 articles_db = cur.fetchall()
     except Exception as e:
-        print(f"Fetch failed: {e}")
-        return jsonify({"Failed to retrieve articles"}), 500
-    
-    articles_dict = []
-    for article in articles_db:
-        articles_dict.append({
-            'content': article[0],
-            'company': article[1],
-            'sentiment': article[2],
-            'confidence': article[3],
-            'time': article[4].strftime('%Y-%m-%d %H:%M') + ' UTC' if article[4] else 'N/A'
+        print(f"Database articles query failed: {e}")
+        return jsonify({"error": "Failed to retrieve articles."}), 500
+
+    articles_as_dicts = []
+    for row in articles_db:
+        articles_as_dicts.append({
+            'content': row[0], 'company': row[1], 'sentiment': row[2],
+            'confidence': row[3],
+            'time': row[4].strftime('%Y-%m-%d %H:%M') + ' UTC' if row[4] else 'N/A'
         })
-    return jsonify(articles_dict)
+    return jsonify(articles_as_dicts)
 
 @app.route('/api/summary')
 def api_summary():
-    '''
-    Return summary statistics for the top bar
-    '''
-    confidence_filter = request.args.get('confidence', 'all')
-    confidence_sql = "AND confidence >= 0.85" if confidence_filter == 'high' else ""
+    date_str = request.args.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d'))
+    confidence_str = request.args.get('confidence', '0')
+
+    try:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        min_confidence = float(confidence_str)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid date or confidence format."}), 400
 
     summary = {}
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                # Get daily count
-                daily_query = f"""
-                    SELECT COUNT(*) FROM briefs
-                    WHERE sentiment IS NOT NULL
-                    AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = CAST(NOW() AT TIME ZONE 'UTC' AS DATE)
-                    {confidence_sql};
-                """
-                cur.execute(daily_query)
-                summary['daily_count'] = cur.fetchone()[0]
-                
-                # Get monthly counts
-                monthly_query = f"""
+                # Daily Summary (for the selected day)
+                daily_query = """
                     SELECT sentiment, COUNT(*) FROM briefs
-                    WHERE sentiment IN ('POSITIVE', 'NEGATIVE')
-                    AND scraped_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
-                    {confidence_sql}
+                    WHERE sentiment IS NOT NULL
+                    AND CAST(scraped_at AT TIME ZONE 'UTC' AS DATE) = %s
+                    AND confidence >= %s
                     GROUP BY sentiment;
                 """
-                cur.execute(monthly_query)
+                cur.execute(daily_query, (target_date, min_confidence))
+                daily_results = dict(cur.fetchall())
+                summary['daily'] = {
+                    'positive': daily_results.get('POSITIVE', 0),
+                    'negative': daily_results.get('NEGATIVE', 0),
+                    'neutral': daily_results.get('NEUTRAL', 0)
+                }
+
+                # Monthly Summary (for the month of the selected day)
+                monthly_query = """
+                    SELECT sentiment, COUNT(*) FROM briefs
+                    WHERE sentiment IN ('POSITIVE', 'NEGATIVE')
+                    AND scraped_at >= DATE_TRUNC('month', %s::date)
+                    AND scraped_at < DATE_TRUNC('month', %s::date) + INTERVAL '1 month'
+                    AND confidence >= %s
+                    GROUP BY sentiment;
+                """
+                cur.execute(monthly_query, (target_date, target_date, min_confidence))
                 monthly_results = dict(cur.fetchall())
-                summary['monthly_positive'] = monthly_results.get('POSITIVE', 0)
-                summary['monthly_negative'] = monthly_results.get('NEGATIVE', 0)
-                summary['month_neutral'] = monthly_results.get('NEUTRAL',0)
+                summary['monthly'] = {
+                    'positive': monthly_results.get('POSITIVE', 0),
+                    'negative': monthly_results.get('NEGATIVE', 0)
+                }
     except Exception as e:
         print(f"Database summary query failed: {e}")
         return jsonify({"error": "Failed to retrieve summary."}), 500
+        
     return jsonify(summary)
 
 @app.route('/healthz')
 def health_check():
-    """
-    A simple, lightweight endpoint for the cron job to hit.
-    It does nothing but return a 200 OK status and a tiny message.
-    """
     return "OK", 200
 
 if __name__ == '__main__':

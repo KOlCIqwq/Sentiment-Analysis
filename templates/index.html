@@ -5,30 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial News Analysis</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa; color: #212529;}
-        .top-bar { display: flex; justify-content: space-between; align-items: stretch; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .widget { background-color: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa; color: #212529; }
+        .top-bar-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; align-items: stretch; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .widget { background-color: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center; }
         .widget h2 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #6c757d; text-transform: uppercase; }
         .widget p { margin: 0; font-size: 1.75rem; font-weight: 500; }
-        #monthly-summary p { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-        .summary-values { display: flex; gap: 1rem; }
-        .summary-value { display: flex; align-items: center; gap: 0.5rem; }
+        .summary-values { display: flex; justify-content: center; gap: 1rem; }
+        .summary-value { display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; }
         .positive-text { color: #28a745; }
         .negative-text { color: #dc3545; }
-        .total-text { font-size: 1rem; color: #495057; font-weight: bold; margin-top: 0.5rem; }
+        .neutral-text { color: #6c757d; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; }
         .date-nav h1 { margin: 0; font-size: 1.5rem; }
-        .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px;}
+        .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px; }
         .date-nav button:disabled { color: #ccc; }
         #clock { font-size: 1.5rem; }
-        .controls { display: flex; align-items: center; gap: 1rem; }
-        .switch { position: relative; display: inline-block; width: 120px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #28a745; }
-        input:checked + .slider:before { transform: translateX(86px); }
-        .switch-labels { color: #fff; position: absolute; width: 100%; top: 50%; transform: translateY(-50%); display: flex; justify-content: space-around; font-size: 0.75rem; font-weight: bold; }
+        .controls { display: flex; align-items: center; justify-content: space-around; gap: 1rem; }
+        .confidence-slider-container { width: 150px; text-align: center; }
+        .confidence-slider-container label { font-size: 0.7rem; color: #6c757d; display: block; }
+        .confidence-slider-container input[type="range"] { width: 100%; margin: 0.25rem 0; }
+        .confidence-slider-container input[type="number"] { width: 60px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
         table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
         thead { background-color: #e9ecef; }
@@ -38,30 +34,32 @@
         .sentiment.POSITIVE { color: #28a745; }
         .sentiment.NEGATIVE { color: #dc3545; }
         .sentiment.NEUTRAL { color: #6c757d; }
+        @media (max-width: 1200px) { .top-bar-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="widget" id="monthly-summary-widget">
+    <div class="top-bar-grid">
+        <div class="widget">
             <h2>This Month's Summary</h2>
-            <p>
-                <div class="summary-values">
-                    <span class="summary-value positive-text" id="monthly-positive">...</span>
-                    <span class="summary-value negative-text" id="monthly-negative">...</span>
-                </div>
-                <span class="total-text" id="monthly-total">Total: ...</span>
-            </p>
+            <div class="summary-values">
+                <p class="summary-value positive-text" id="monthly-positive">...</p>
+                <p class="summary-value negative-text" id="monthly-negative">...</p>
+            </div>
         </div>
-        <div class="widget" id="daily-count">
-            <h2>Today's News Count</h2>
-            <p id="daily-count-value">...</p>
+        <div class="widget">
+            <h2 id="daily-summary-title">Daily Summary</h2>
+            <div class="summary-values">
+                <p class="summary-value positive-text" id="daily-positive">...</p>
+                <p class="summary-value negative-text" id="daily-negative">...</p>
+                <p class="summary-value neutral-text" id="daily-neutral">...</p>
+            </div>
         </div>
         <div class="widget controls">
-            <label class="switch" title="Toggle AI Confidence Level">
-                <input type="checkbox" id="confidence-toggle">
-                <span class="slider"></span>
-                <div class="switch-labels"><span>All</span><span>High</span></div>
-            </label>
+            <div class="confidence-slider-container">
+                <label for="confidence-slider">AI Confidence Threshold</label>
+                <input type="range" id="confidence-slider" min="0" max="100" value="0">
+                <input type="number" id="confidence-input" min="0" max="100" value="0">%
+            </div>
             <div class="date-nav">
                 <button id="btn-prev" title="Previous Day">&lt;</button>
                 <h1 id="date-title">...</h1>
@@ -73,13 +71,7 @@
     
     <table>
         <thead>
-            <tr>
-                <th>Brief</th>
-                <th>Subject Company</th>
-                <th>Sentiment</th>
-                <th>Confidence</th>
-                <th>Published At</th>
-            </tr>
+            <tr><th>Brief</th><th>Subject Company</th><th>Sentiment</th><th>Confidence</th><th>Published At</th></tr>
         </thead>
         <tbody id="articles-tbody"></tbody>
     </table>
@@ -87,19 +79,23 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let currentDate = new Date();
-            let confidenceLevel = 'all';  // 'all' or 'high'
+            let confidenceThreshold = 0;
             let autoRefreshIntervalId = null;
+            let debounceTimeout = null;
 
             const dateTitle = document.getElementById('date-title');
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
             const clockElement = document.getElementById('clock');
             const articlesTbody = document.getElementById('articles-tbody');
-            const confidenceToggle = document.getElementById('confidence-toggle');
-            const dailyCountValue = document.getElementById('daily-count-value');
+            const confidenceSlider = document.getElementById('confidence-slider');
+            const confidenceInput = document.getElementById('confidence-input');
+            const dailySummaryTitle = document.getElementById('daily-summary-title');
+            const dailyPositive = document.getElementById('daily-positive');
+            const dailyNegative = document.getElementById('daily-negative');
+            const dailyNeutral = document.getElementById('daily-neutral');
             const monthlyPositive = document.getElementById('monthly-positive');
             const monthlyNegative = document.getElementById('monthly-negative');
-            const monthlyTotal = document.getElementById('monthly-total');
 
             const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
             const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
@@ -112,34 +108,43 @@
                 const today = new Date();
                 const yesterday = new Date();
                 yesterday.setDate(today.getDate() - 1);
-                if (isSameDay(currentDate, today)) dateTitle.textContent = "Today";
-                else if (isSameDay(currentDate, yesterday)) dateTitle.textContent = "Yesterday";
-                else dateTitle.textContent = currentDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                if (isSameDay(currentDate, today)) {
+                    dateTitle.textContent = "Today";
+                    dailySummaryTitle.textContent = "Today's Summary";
+                } else if (isSameDay(currentDate, yesterday)) {
+                    dateTitle.textContent = "Yesterday";
+                    dailySummaryTitle.textContent = "Yesterday's Summary";
+                } else {
+                    const dateString = currentDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    dateTitle.textContent = dateString;
+                    dailySummaryTitle.textContent = "Daily Summary";
+                }
                 btnNext.disabled = currentDate >= new Date().setHours(0, 0, 0, 0);
             }
-
+            
             async function updateDashboard(showLoading = true) {
                 if (isSameDay(currentDate, new Date())) startAutoRefresh();
                 else stopAutoRefresh();
 
                 const dateStr = toYYYYMMDD(currentDate);
-                const params = `?date=${dateStr}&confidence=${confidenceLevel}`;
-
+                const confidence = confidenceThreshold / 100;
+                const summaryParams = `?date=${dateStr}&confidence=${confidence}`;
+                const articlesParams = `?date=${dateStr}&confidence=${confidence}`;
+                
                 if (showLoading) articlesTbody.classList.add('loading');
                 updateUIState();
-                // Fetch both summary and articles in parallel
+
                 const [summaryData, articlesData] = await Promise.all([
-                    fetch(`/api/summary?confidence=${confidenceLevel}`).then(res => res.json()),
-                    fetch(`/api/articles${params}`).then(res => res.json())
+                    fetch(`/api/summary${summaryParams}`).then(res => res.json()),
+                    fetch(`/api/articles${articlesParams}`).then(res => res.json())
                 ]);
-                // Update summary widgets
-                const posCount = summaryData.monthly_positive || 0;
-                const negCount = summaryData.monthly_negative || 0;
-                dailyCountValue.textContent = summaryData.daily_count || 0;
-                monthlyPositive.textContent = `+${posCount}`;
-                monthlyNegative.textContent = `-${negCount}`;
-                monthlyTotal.textContent = `Total: ${posCount + negCount}`;
-                // Update articles table with fade effect
+                
+                dailyPositive.textContent = `+${summaryData.daily.positive || 0}`;
+                dailyNegative.textContent = `-${summaryData.daily.negative || 0}`;
+                dailyNeutral.textContent = `~${summaryData.daily.neutral || 0}`;
+                monthlyPositive.textContent = `+${summaryData.monthly.positive || 0}`;
+                monthlyNegative.textContent = `-${summaryData.monthly.negative || 0}`;
+
                 setTimeout(() => {
                     articlesTbody.innerHTML = '';
                     if (articlesData.length > 0) {
@@ -152,12 +157,11 @@
                                     <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
                                     <td>${confidencePercent}%</td>
                                     <td>${article.time}</td>
-                                </tr>
-                            `;
+                                </tr>`;
                             articlesTbody.innerHTML += row;
                         });
                     } else {
-                        articlesTbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No processed articles found for this day.</td></tr>`;
+                        articlesTbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No processed articles found with the selected criteria.</td></tr>`;
                     }
                     articlesTbody.classList.remove('loading');
                 }, 300);
@@ -168,14 +172,33 @@
                 stopAutoRefresh();
                 autoRefreshIntervalId = setInterval(() => updateDashboard(false), 30000);
             }
-            // Event Listeners
+            
+            function handleConfidenceChange() {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    updateDashboard();
+                }, 1000); // Wait 1 second after the user stops changing the value
+            }
+
             btnPrev.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() - 1); updateDashboard(); });
             btnNext.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() + 1); updateDashboard(); });
-            confidenceToggle.addEventListener('change', (e) => {
-                confidenceLevel = e.target.checked ? 'high' : 'all';
-                updateDashboard();
+            
+            confidenceSlider.addEventListener('input', (e) => {
+                confidenceThreshold = e.target.value;
+                confidenceInput.value = confidenceThreshold;
+                handleConfidenceChange();
             });
-            // Initial Load
+
+            confidenceInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value, 10);
+                if (isNaN(value) || value < 0) value = 0;
+                if (value > 100) value = 100;
+                confidenceThreshold = value;
+                confidenceSlider.value = confidenceThreshold;
+                e.target.value = confidenceThreshold; // Correct the input if invalid
+                handleConfidenceChange();
+            });
+
             updateClock();
             setInterval(updateClock, 1000);
             updateDashboard();
