@@ -58,11 +58,15 @@ def analyze_text(text: str):
 
 
 if __name__ == "__main__":
-    # Test sentences to analyze
+
+    headline = input("Insert the headline to analyze:")
+    analyze_text(headline)
+
+    """ # Test sentences to analyze
     test_sentences = [
-        "Bridgewater Associates sold all its U.S.-listed China shares in Q2 2025, including $1.5B in stocks & ETFs, amid U.S.-China trade tensions & potential de-listings. Major sales involved Alibaba, JD.com, & Baidu, while increasing U.S. tech investments in Nvidia, Alphabet, & Microsoft."
-        ,
     ]
 
     for sentence in test_sentences:
-        analyze_text(sentence)
+        analyze_text(sentence) """
+
+
