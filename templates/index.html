@@ -4,215 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial News Analysis</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2rem; background-color: #f8f9fa; color: #212529; }
-        .top-bar-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; align-items: stretch; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .widget { background-color: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center; }
-        .widget h2 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #6c757d; text-transform: uppercase; }
-        .widget p { margin: 0; font-size: 1.75rem; font-weight: 500; }
-        .summary-values { display: flex; justify-content: center; gap: 1rem; }
-        .summary-value { display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; }
-        .positive-text { color: #28a745; }
-        .negative-text { color: #dc3545; }
-        .neutral-text { color: #6c757d; }
-        .total-text { font-size: 1rem; color: #495057; font-weight: bold; margin-top: 0.5rem; }
-        .date-nav { display: flex; align-items: center; justify-content: center; gap: 1rem; }
-        .date-nav h1 { margin: 0; font-size: 1.5rem; }
-        .date-nav button { font-size: 2rem; background: none; border: none; cursor: pointer; color: #007bff; padding: 0 10px; }
-        .date-nav button:disabled { color: #ccc; }
-        #clock { font-size: 1.5rem; }
-        .controls { display: flex; align-items: center; justify-content: space-around; gap: 1rem; }
-        .confidence-slider-container { width: 150px; text-align: center; }
-        .confidence-slider-container label { font-size: 0.7rem; color: #6c757d; display: block; }
-        .confidence-slider-container input[type="range"] { width: 100%; margin: 0.25rem 0; }
-        .confidence-slider-container input[type="number"] { width: 60px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        th, td { padding: 12px 15px; border: 1px solid #dee2e6; text-align: left; }
-        thead { background-color: #e9ecef; }
-        #articles-tbody { transition: opacity 0.3s ease-in-out; }
-        #articles-tbody.loading { opacity: 0; }
-        .sentiment { font-weight: bold; }
-        .sentiment.POSITIVE { color: #28a745; }
-        .sentiment.NEGATIVE { color: #dc3545; }
-        .sentiment.NEUTRAL { color: #6c757d; }
-        @media (max-width: 1200px) { .top-bar-grid { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/widgets.css">
+    <link rel="stylesheet" href="styles/controls.css">
+    <link rel="stylesheet" href="styles/buttons.css">
+    <link rel="stylesheet" href="styles/tables.css">
+    <link rel="stylesheet" href="styles/badges.css">
+    <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
+    <div class="background-gradient"></div>
+    
     <div class="top-bar-grid">
         <div class="widget">
             <h2>This Month's Summary</h2>
             <div class="summary-values">
-                <p class="summary-value positive-text" id="monthly-positive">...</p>
-                <p class="summary-value negative-text" id="monthly-negative">...</p>
+                <p class="summary-value positive-text number-counter" id="monthly-positive">...</p>
+                <p class="summary-value negative-text number-counter" id="monthly-negative">...</p>
             </div>
             <p class="total-text" id="monthly-total">Total: ...</p>
         </div>
+        
         <div class="widget">
             <h2 id="daily-summary-title">Daily Summary</h2>
             <div class="summary-values">
-                <p class="summary-value positive-text" id="daily-positive">...</p>
-                <p class="summary-value negative-text" id="daily-negative">...</p>
-                <p class="summary-value neutral-text" id="daily-neutral">...</p>
+                <p class="summary-value positive-text number-counter" id="daily-positive">...</p>
+                <p class="summary-value negative-text number-counter" id="daily-negative">...</p>
+                <p class="summary-value neutral-text number-counter" id="daily-neutral">...</p>
             </div>
         </div>
+        
         <div class="widget controls">
             <div class="confidence-slider-container">
                 <label for="confidence-slider">AI Confidence Threshold</label>
-                <input type="range" id="confidence-slider" min="0" max="100" value="0">
-                <input type="number" id="confidence-input" min="0" max="100" value="0">%
+                <div class="slider-wrapper">
+                    <input type="range" id="confidence-slider" min="0" max="100" value="0">
+                    <div class="slider-track"></div>
+                    <div class="slider-fill"></div>
+                </div>
+                <div class="confidence-input-wrapper">
+                    <input type="number" id="confidence-input" min="0" max="100" value="0">
+                    <span class="input-suffix">%</span>
+                </div>
             </div>
+            
             <div class="date-nav">
-                <button id="btn-prev" title="Previous Day">&lt;</button>
+                <button id="btn-prev" title="Previous Day">
+                    <span>&lt;</span>
+                </button>
                 <h1 id="date-title">...</h1>
-                <button id="btn-next" title="Next Day">&gt;</button>
+                <button id="btn-next" title="Next Day">
+                    <span>&gt;</span>
+                </button>
             </div>
-            <span id="clock"></span>
+            
+            <div class="clock-container">
+                <span id="clock"></span>
+            </div>
         </div>
     </div>
     
-    <table>
-        <thead>
-            <tr><th>Brief</th><th>Subject Company</th><th>Sentiment</th><th>Confidence</th><th>Published At</th></tr>
-        </thead>
-        <tbody id="articles-tbody"></tbody>
-    </table>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Brief</th>
+                    <th>Subject Company</th>
+                    <th>Sentiment</th>
+                    <th>Confidence</th>
+                    <th>Published At</th>
+                </tr>
+            </thead>
+            <tbody id="articles-tbody"></tbody>
+        </table>
+    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            let currentDate = new Date();
-            let confidenceThreshold = 0;
-            let autoRefreshIntervalId = null;
-            let debounceTimeout = null;
-
-            const dateTitle = document.getElementById('date-title');
-            const btnPrev = document.getElementById('btn-prev');
-            const btnNext = document.getElementById('btn-next');
-            const clockElement = document.getElementById('clock');
-            const articlesTbody = document.getElementById('articles-tbody');
-            const confidenceSlider = document.getElementById('confidence-slider');
-            const confidenceInput = document.getElementById('confidence-input');
-            const dailySummaryTitle = document.getElementById('daily-summary-title');
-            const dailyPositive = document.getElementById('daily-positive');
-            const dailyNegative = document.getElementById('daily-negative');
-            const dailyNeutral = document.getElementById('daily-neutral');
-            const monthlyPositive = document.getElementById('monthly-positive');
-            const monthlyNegative = document.getElementById('monthly-negative');
-            const monthlyTotal = document.getElementById('monthly-total');
-
-            const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
-            const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
-
-            function updateClock() {
-                clockElement.textContent = new Date().toLocaleTimeString('en-GB');
-            }
-
-            function updateUIState() {
-                const today = new Date();
-                const yesterday = new Date();
-                yesterday.setDate(today.getDate() - 1);
-                if (isSameDay(currentDate, today)) {
-                    dateTitle.textContent = "Today";
-                    dailySummaryTitle.textContent = "Today's Summary";
-                } else if (isSameDay(currentDate, yesterday)) {
-                    dateTitle.textContent = "Yesterday";
-                    dailySummaryTitle.textContent = "Yesterday's Summary";
-                } else {
-                    const dateString = currentDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-                    dateTitle.textContent = dateString;
-                    dailySummaryTitle.textContent = "Daily Summary";
-                }
-                btnNext.disabled = currentDate >= new Date().setHours(0, 0, 0, 0);
-            }
-            
-            async function updateDashboard(showLoading = true) {
-                if (isSameDay(currentDate, new Date())) startAutoRefresh();
-                else stopAutoRefresh();
-
-                const dateStr = toYYYYMMDD(currentDate);
-                const confidence = confidenceThreshold / 100;
-                const summaryParams = `?date=${dateStr}&confidence=${confidence}`;
-                const articlesParams = `?date=${dateStr}&confidence=${confidence}`;
-                
-                if (showLoading) articlesTbody.classList.add('loading');
-                updateUIState();
-
-                const [summaryData, articlesData] = await Promise.all([
-                    fetch(`/api/summary${summaryParams}`).then(res => res.json()),
-                    fetch(`/api/articles${articlesParams}`).then(res => res.json())
-                ]);
-                
-                const dailyPos = summaryData.daily.positive || 0;
-                const dailyNeg = summaryData.daily.negative || 0;
-                const dailyNeu = summaryData.daily.neutral || 0;
-                const monthlyPos = summaryData.monthly.positive || 0;
-                const monthlyNeg = summaryData.monthly.negative || 0;
-
-                dailyPositive.textContent = `+${dailyPos}`;
-                dailyNegative.textContent = `-${dailyNeg}`;
-                dailyNeutral.textContent = `~${dailyNeu}`;
-                monthlyPositive.textContent = `+${monthlyPos}`;
-                monthlyNegative.textContent = `-${monthlyNeg}`;
-                monthlyTotal.textContent = `Total: ${monthlyPos + monthlyNeg}`;
-
-                setTimeout(() => {
-                    articlesTbody.innerHTML = '';
-                    if (articlesData.length > 0) {
-                        articlesData.forEach(article => {
-                            const confidencePercent = (article.confidence * 100).toFixed(2);
-                            const row = `
-                                <tr>
-                                    <td>${article.content}</td>
-                                    <td>${article.company || 'N/A'}</td>
-                                    <td class="sentiment ${article.sentiment}">${article.sentiment}</td>
-                                    <td>${confidencePercent}%</td>
-                                    <td>${article.time}</td>
-                                </tr>`;
-                            articlesTbody.innerHTML += row;
-                        });
-                    } else {
-                        articlesTbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No processed articles found with the selected criteria.</td></tr>`;
-                    }
-                    articlesTbody.classList.remove('loading');
-                }, 300);
-            }
-
-            function stopAutoRefresh() { if (autoRefreshIntervalId) clearInterval(autoRefreshIntervalId); }
-            function startAutoRefresh() {
-                stopAutoRefresh();
-                autoRefreshIntervalId = setInterval(() => updateDashboard(false), 30000);
-            }
-            
-            function handleConfidenceChange() {
-                clearTimeout(debounceTimeout);
-                debounceTimeout = setTimeout(() => {
-                    updateDashboard();
-                }, 1000);
-            }
-
-            btnPrev.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() - 1); updateDashboard(); });
-            btnNext.addEventListener('click', () => { currentDate.setDate(currentDate.getDate() + 1); updateDashboard(); });
-            
-            confidenceSlider.addEventListener('input', (e) => {
-                confidenceThreshold = e.target.value;
-                confidenceInput.value = confidenceThreshold;
-                handleConfidenceChange();
-            });
-
-            confidenceInput.addEventListener('input', (e) => {
-                let value = parseInt(e.target.value, 10);
-                if (isNaN(value) || value < 0) value = 0;
-                if (value > 100) value = 100;
-                confidenceThreshold = value;
-                confidenceSlider.value = confidenceThreshold;
-                e.target.value = confidenceThreshold;
-                handleConfidenceChange();
-            });
-
-            updateClock();
-            setInterval(updateClock, 1000);
-            updateDashboard();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

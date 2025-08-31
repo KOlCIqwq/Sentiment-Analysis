@@ -1,0 +1,164 @@
+/* Form controls and interactive elements */
+.controls { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-around; 
+    gap: 1.5rem; 
+    flex-wrap: wrap;
+}
+
+/* Custom Slider Styles */
+.confidence-slider-container { 
+    width: 180px; 
+    text-align: center; 
+    transition: transform 0.3s ease;
+}
+
+.confidence-slider-container:hover {
+    transform: scale(1.02);
+}
+
+.confidence-slider-container label { 
+    font-size: 0.75rem; 
+    color: #64748b; 
+    display: block; 
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: color 0.3s ease;
+}
+
+.confidence-slider-container:hover label {
+    color: #475569;
+}
+
+.slider-wrapper {
+    position: relative;
+    height: 20px;
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.slider-fill {
+    position: absolute;
+    height: 6px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#confidence-slider {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    background: transparent;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    z-index: 2;
+}
+
+#confidence-slider::-webkit-slider-track {
+    background: transparent;
+    height: 6px;
+    border-radius: 3px;
+}
+
+#confidence-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease;
+    border: 3px solid white;
+    position: relative;
+    top: -7px;
+}
+
+#confidence-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+#confidence-slider::-moz-range-track {
+    background: transparent;
+    height: 6px;
+    border: none;
+    border-radius: 3px;
+}
+
+#confidence-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    border: 3px solid white;
+    transition: all 0.3s ease;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+#confidence-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.confidence-input-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.confidence-input-wrapper input[type="number"] { 
+    width: 70px; 
+    text-align: center; 
+    border: 2px solid rgba(148, 163, 184, 0.3); 
+    border-radius: 8px; 
+    padding: 0.5rem 1.25rem 0.5rem 0.5rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    font-weight: 600;
+    color: #374151;
+}
+
+.confidence-input-wrapper input[type="number"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 1);
+}
+
+.input-suffix {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    pointer-events: none;
+}
