@@ -14,17 +14,20 @@ In today’s fast-paced world, staying updated on financial news is crucial. Sto
 
 Years ago, I had the idea to use models to predict stock prices, but it didn’t work. I realized that a key factor influencing stock prices is the news headlines of the company.
 
-This project was born to provide an overall sentiment of the market based on its financial news headlines.
+That’s exactly why this project came to be – to give a clear picture of market sentiment by analyzing financial news headlines.
+
+> You cannot predict the future.  -Stephen Hawking (*A Brief History of Time*)
 
 ## Features
 - Automatically scrapes financial news articles.
-- Stores articles and sentiment in a PostfreSQL database
+- Stores articles and sentiment in a PostgreSQL database
 - Use a pretrained model to classify headlines as positive, negative or neutral
 - Use a custom model to do Named-entity recognition (NER) on companies
 
 ## Structure
 - [scraper.py](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/scraper.py): Scrapes news articles, inserts them into a PostgreSQL database, and triggers the Kaggle notebook.
-- [kaggle.ipynb](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/kaggle.ipynb): Runs the models on Kaggle and inserts the results into the same PostgreSQL database.
+- [financial-news-analyzer.ipynb](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/financial-news-analyzer.ipynb): Runs the models on Kaggle and inserts the results into the same PostgreSQL database.
+- [kaggle.ipynb](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/kaggle.ipynb): File used to fine-tune the model
 - [app.py](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/app.py): Flask web application that serves the demo website and exposes API endpoints for retrieving articles and sentiment summaries from the database
 - [templates/index.html](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/templates/index.html): HTML page for the demo site.
 
