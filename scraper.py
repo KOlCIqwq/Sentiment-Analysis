@@ -76,6 +76,7 @@ def save_brief_to_db(briefs):
     cur.close()
     conn.close()
 
+
 def parse_time(time_str: str) -> datetime:
     now = datetime.now(timezone.utc)
     match = re.search(r'(\d+)\s*(m|h|D)\s*ago', time_str)
@@ -136,9 +137,10 @@ def scrape_and_filter_briefs():
                     full_text = full_text.replace('"', "").replace("'", "")
                     # Remove parenthesis
                     full_text = re.sub(r'\([^)]*\)', '', full_text)
-                    # Remove time m,h
+                    # Remove time m,h,D
                     full_text = re.sub(r'\d+m ', '', full_text)
                     full_text = re.sub(r'\d+h ', '', full_text)
+                    full_text = re.sub(r'\d+D ', '', full_text)
                     # Remove ago
                     full_text = re.sub(r'ago','',full_text)
                     # Remove the symbol
@@ -153,7 +155,6 @@ def scrape_and_filter_briefs():
             filtered_briefs = [
                 item for item in all_items_text if len(item[0]) > MIN_BRIEF_LENGTH
             ]
-            print(all_items_text)
 
             if not filtered_briefs:
                 print("Could not find any items matching the length filter.")
@@ -205,7 +206,6 @@ def main():
     finally:
         trigger_kaggle_notebook()
         print("--- Process Complete ---")
-
 
 if __name__ == "__main__":
     main()
