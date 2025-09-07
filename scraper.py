@@ -140,7 +140,7 @@ def scrape_and_filter_briefs():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
         )
         try:
-            all_items_text = [] 
+            unique_briefs = {}
             print("Applying stealth measures...")
             stealth = Stealth()
             stealth.apply_stealth_sync(context)
@@ -190,7 +190,9 @@ def scrape_and_filter_briefs():
                             break
                     full_text = ' '.join(full_text.split())
                     if full_text:
-                        all_items_text.append((full_text,time))
+                        unique_briefs[full_text] = time
+            all_items_text = list(unique_briefs.items())
+            print(f"\nScraped {len(all_items_text)} unique items.")
             print(f"\nFiltering for items with more than {MIN_BRIEF_LENGTH} characters...")
             filtered_briefs = [
                 item for item in all_items_text if len(item[0]) > MIN_BRIEF_LENGTH
