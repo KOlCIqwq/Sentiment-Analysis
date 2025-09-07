@@ -40,12 +40,11 @@ jobs:
       - name: Run the Scraper and Trigger Analysis
         run: python scraper.py
         env:
-          # This secret is used by scraper.py to connect to your Render database
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           
-      - name: Check database entries
-        if: always() # This step runs even if the previous step fails, for debugging.
-        run: python check_db.py
-        env:
-          # This secret is also used by check_db.py
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      #- name: Check database entries
+      #  if: always() # This step runs even if the previous step fails, for debugging.
+      #  run: python check_db.py
+      #  env:
+      #    DATABASE_URL: ${{ secrets.DATABASE_URL }}

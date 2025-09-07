@@ -1,18 +1,8 @@
 playwright
 playwright-stealth
-psycopg2-binary # PostgreSQL database
-
-# Remove because github action don't require the model load, just scraping so not needed
-#spacy
-#transformers
-#torch  
-
-
+#psycopg2-binary # PostgreSQL database
 flask
-# Add the specific version of sentencepiece if needed by your HF model
 sentencepiece
-
-flask
 gunicorn
-
 kaggle
+supabase

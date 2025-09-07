@@ -7,13 +7,15 @@ from datetime import datetime, timedelta, timezone
 from playwright.sync_api import sync_playwright, TimeoutError
 from playwright_stealth import Stealth
 
+from supabase import create_client, Client
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_ENTRIES = 300000
 MIN_BRIEF_LENGTH = 180
 MAX_BRIEF_LENGTH = 8000
 KAGGLE_NOTEBOOK_ID = "kolci017/financial-news-analyzer"
 
-def setup_database():
+'''def setup_database():
     """Ensures the 'briefs' table exists in the database."""
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
@@ -74,7 +76,46 @@ def save_brief_to_db(briefs):
         print(f"Successfully removed {delete}")
 
     cur.close()
-    conn.close()
+    conn.close()'''
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+def enforce_brief_limit():
+    """Calls a database function to delete the oldest briefs if the table exceeds MAX_ENTRIES."""
+    print("Checking if brief limit has been exceeded...")
+    try:
+        supabase.rpc('enforce_brief_limit', {'max_count': MAX_ENTRIES}).execute()
+        print(f"Successfully enforced max entry limit of {MAX_ENTRIES}.")
+    except Exception as e:
+        print(f"An error occurred while enforcing the brief limit: {e}")
+
+def save_brief_to_db(briefs):
+    if not briefs:
+        print("Empty brief list, skipping save.")
+        return
+
+    print("Preparing briefs for API insert...")
+    briefs_to_insert = []
+    for content, published_at in briefs:
+        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+        briefs_to_insert.append({
+            'content_hash': content_hash,
+            'content': content,
+            'scraped_at': published_at.isoformat() # Use ISO format for timestamps
+        })
+
+    try:
+        print(f"Inserting/updating {len(briefs_to_insert)} briefs...")
+        response = supabase.table('briefs').upsert(briefs_to_insert, on_conflict='content_hash').execute() 
+        
+        print(f"Successfully saved briefs to the database.")
+
+        enforce_brief_limit()
+
+    except Exception as e:
+        print(f"An unexpected error occurred during DB save: {e}")
 
 
 def parse_time(time_str: str) -> datetime:
