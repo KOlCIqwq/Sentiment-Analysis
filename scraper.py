@@ -234,7 +234,7 @@ def main():
         raise Exception("Supabase URL and Service Key must be set in the environment secrets.")
     
     try:
-        print("--- Starting Scraping ---")
+        print("Starting Scraping")
         # No setup_database() needed; schema is managed in Supabase UI.
         scraped_briefs = scrape_and_filter_briefs()
         
@@ -243,12 +243,12 @@ def main():
             save_brief_to_db(scraped_briefs)
         else:
             print("Scraper finished but found no new entries to save.")
-        print("--- Finished Scraping ---")
+        print("Finished Scraping")
     
     finally:
         # The 'finally' block ensures this runs even if the scraping part fails.
         trigger_kaggle_notebook()
-        print("--- Process Complete ---")
+        print("Process Complete")
 
 if __name__ == "__main__":
     main()
