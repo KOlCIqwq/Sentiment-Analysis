@@ -1,6 +1,5 @@
 import re
 import os
-import psycopg2
 import hashlib
 
 from datetime import datetime, timedelta, timezone
@@ -229,22 +228,23 @@ def trigger_kaggle_notebook():
 
 
 def main():
-    if not DATABASE_URL:
-        raise Exception("Database Url not set")
-    if not KAGGLE_NOTEBOOK_ID or "your-kaggle-username" in KAGGLE_NOTEBOOK_ID:
-        raise Exception("KAGGLE_NOTEBOOK_ID is not configured. Please edit the script.")
-        
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        raise Exception("Supabase URL and Service Key must be set in the environment secrets.")
+    
     try:
         print("--- Starting Scraping ---")
-        setup_database()
-        scraped = scrape_and_filter_briefs()
-        if scraped:
-            print(f"Scraped {len(scraped)} entries, saving to DB...")
-            save_brief_to_db(scraped)
+        # No setup_database() needed; schema is managed in Supabase UI.
+        scraped_briefs = scrape_and_filter_briefs()
+        
+        if scraped_briefs:
+            print(f"Scraped {len(scraped_briefs)} new entries, saving to database...")
+            save_brief_to_db(scraped_briefs)
         else:
             print("Scraper finished but found no new entries to save.")
         print("--- Finished Scraping ---")
+    
     finally:
+        # The 'finally' block ensures this runs even if the scraping part fails.
         trigger_kaggle_notebook()
         print("--- Process Complete ---")
 
