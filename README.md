@@ -28,8 +28,8 @@ That’s exactly why this project came to be – to give a clear picture of mark
 - [scraper.py](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/scraper.py): Scrapes news articles, inserts them into a PostgreSQL database, and triggers the Kaggle notebook.
 - [financial-news-analyzer.ipynb](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/financial-news-analyzer.ipynb): Runs the models on Kaggle and inserts the results into the same PostgreSQL database.
 - [kaggle.ipynb](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/kaggle.ipynb): File used to fine-tune the model
-- [app.py](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/app.py): Flask web application that serves the demo website and exposes API endpoints for retrieving articles and sentiment summaries from the database
-- [templates/index.html](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/templates/index.html): HTML page for the demo site.
+- [api/index.py](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/api/index.py): Flask web application that serves the demo website and exposes API endpoints for retrieving articles and sentiment summaries from the database
+- [public/index.html](https://github.com/KOlCIqwq/Sentiment-Analysis/blob/master/public/index.html): HTML page for the demo site.
 
 ## Models
 - Based on DistilBERT, fine-tuned for financial news sentiment classification.
