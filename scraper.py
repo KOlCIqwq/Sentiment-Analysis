@@ -119,7 +119,7 @@ def save_brief_to_db(briefs):
 
 def parse_time(time_str: str) -> datetime:
     now = datetime.now(timezone.utc)
-    match = re.search(r'(\d+)\s*(m|h|D)\s*ago', time_str)
+    match = re.search(r'(\d+)\s*(m|h|D|W)\s*ago', time_str)
     if not match:
         return now
     value = int(match.group(1))
@@ -130,6 +130,8 @@ def parse_time(time_str: str) -> datetime:
         return now - timedelta(hours=value)
     elif unit == 'D':
         return now - timedelta(days=value)
+    elif unit == 'W':
+        return now - timedelta(weeks=value)
     return now
 
 def scrape_and_filter_briefs():
@@ -177,10 +179,11 @@ def scrape_and_filter_briefs():
                     full_text = full_text.replace('"', "").replace("'", "")
                     # Remove parenthesis
                     full_text = re.sub(r'\([^)]*\)', '', full_text)
-                    # Remove time m,h,D
+                    # Remove time m,h,D,W
                     full_text = re.sub(r'\d+m ', '', full_text)
                     full_text = re.sub(r'\d+h ', '', full_text)
                     full_text = re.sub(r'\d+D ', '', full_text)
+                    full_text = re.sub(r'\d+W ', '', full_text)
                     # Remove ago
                     full_text = re.sub(r'ago','',full_text)
                     # Remove the symbol
