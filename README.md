@@ -1,7 +1,7 @@
 # Financial News Sentiment Analysis
 A Python-based project that analyzes financial news headlines and predicts the overall sentiment for companies using NLP models.
 
-[Live Demo](https://sentiment-analysis-jzlt.onrender.com/)
+[Live Demo](https://sentiment-analysis-eight-gamma.vercel.app/)
 
 Try it out:
 ```
