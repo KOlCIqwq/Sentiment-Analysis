@@ -1,0 +1,14 @@
+*.csv
+*.json
+*.zip
+*.pkl
+*.h5
+*.pt
+*.bin
+kaggle.json
+
+venv/
+.git/
+__pycache__/
+
+*.ipynb
