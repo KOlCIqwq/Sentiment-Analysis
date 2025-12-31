@@ -10,7 +10,7 @@ python run_analysis.py
 ```
 
 ## Motivation
-In today’s fast-paced world, staying updated on financial news is crucial. Stock prices are heavily influenced by company headlines, but manually tracking this information is challenging.
+In today’s fast-paced world, staying updated on financial news is crucial. Stock prices are heavily influenced by company headlines, but manually tracking this information is challenging
 
 Years ago, I had the idea to use models to predict stock prices, but it didn’t work. I realized that a key factor influencing stock prices is the news headlines of the company.
 
