@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask = "*"
+gunicorn = "*"
+sentencepiece = "*"
+supabase = "*"
+kaggle = "*"
+# playwright = "*"  <-- Uncomment only if you strictly need it
+
+[requires]
+python_version = "3.9"
